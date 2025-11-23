@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Fragment } from 'react'
+import { useEffect, useState } from 'react'
 import {
   HomeIcon,
   UsersIcon,
@@ -319,46 +319,60 @@ export default function OrdersPage() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 lg:p-10 bg-gray-50 min-h-screen overflow-auto lg:ml-72">
+      <main className="flex-1 p-4 sm:p-6 lg:p-10 bg-gray-50 min-h-screen overflow-auto lg:ml-72">
+        {/* Mobile Header with Menu Button */}
+        <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 flex items-center justify-between mb-4">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-2"
+            aria-label="Open menu"
+          >
+            <Bars3Icon className="h-6 w-6" />
+          </button>
+          <img alt="Logo" src="/logo.png" className="h-10 w-auto" />
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+
         <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-gray-100">
             {/* Header Section */}
-            <div className="mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="mb-6 sm:mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
                 <div>
-                  <h2 className="text-3xl font-bold text-gray-900">Orders</h2>
-                  <p className="text-gray-500 mt-1">Manage and track all customer orders</p>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Orders</h2>
+                  <p className="text-sm sm:text-base text-gray-500 mt-1">Manage and track all customer orders</p>
                 </div>
                 <button
                   onClick={handleAdd}
-                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition font-semibold"
+                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg shadow-md hover:shadow-lg transition font-semibold text-sm sm:text-base"
                 >
-                  <PlusIcon className="h-5 w-5" />
-                  Add New Order
+                  <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden sm:inline">Add New Order</span>
+                  <span className="sm:hidden">Add</span>
                 </button>
               </div>
 
               {/* Search Bar */}
               <div className="relative w-full sm:w-64">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search orders..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 text-sm"
                 />
               </div>
             </div>
 
             {/* Orders Table */}
             {filteredOrders.length === 0 ? (
-              <div className="bg-gray-50 rounded-xl border border-gray-200 p-12 text-center">
-                <FolderIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">
+              <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 sm:p-12 text-center">
+                <FolderIcon className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
                   {searchQuery ? 'No orders found' : 'No orders yet'}
                 </h3>
-                <p className="text-gray-500 mb-6">
+                <p className="text-sm sm:text-base text-gray-500 mb-6">
                   {searchQuery
                     ? 'Try adjusting your search terms'
                     : 'Get started by adding your first order'}
@@ -366,134 +380,140 @@ export default function OrdersPage() {
                 {!searchQuery && (
                   <button
                     onClick={handleAdd}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
+                    className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-sm sm:text-base"
                   >
-                    <PlusIcon className="h-5 w-5" />
+                    <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                     Add Your First Order
                   </button>
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm text-gray-700 border-collapse">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 font-semibold text-gray-900 border-b border-gray-200">Date</th>
-                      <th className="px-4 py-3 font-semibold text-gray-900 border-b border-gray-200">Customer</th>
-                      <th className="px-4 py-3 font-semibold text-gray-900 border-b border-gray-200">Product</th>
-                      <th className="px-4 py-3 font-semibold text-gray-900 border-b border-gray-200">Quantity</th>
-                      <th className="px-4 py-3 font-semibold text-gray-900 border-b border-gray-200">Type</th>
-                      <th className="px-4 py-3 font-semibold text-gray-900 border-b border-gray-200">Price</th>
-                      <th className="px-4 py-3 font-semibold text-gray-900 border-b border-gray-200">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredOrders.map((order, idx) => {
-                    const productDetailsList = extractProductDetails(order.products || order.product)
-                    const isExpanded = expandedOrders.has(order.id)
-                    const hasMultipleItems = productDetailsList.length > 1
-                    const totalPrice = productDetailsList.length > 0
-                      ? productDetailsList.reduce((sum, item) => sum + Number(item.price || 0), 0)
-                      : (order.price || 0)
-                    const totalQuantity = productDetailsList.length > 0
-                      ? productDetailsList.reduce((sum, item) => sum + Number(item.quantity || 1), 0)
-                      : 0
+              <div className="space-y-2 sm:space-y-3">
+                {filteredOrders.map((order, idx) => {
+                  const productDetailsList = extractProductDetails(order.products || order.product)
+                  const isExpanded = expandedOrders.has(order.id)
+                  const hasMultipleItems = productDetailsList.length > 1
+                  const totalPrice = productDetailsList.length > 0
+                    ? productDetailsList.reduce((sum, item) => sum + Number(item.price || 0), 0)
+                    : (order.price || 0)
+                  const totalQuantity = productDetailsList.length > 0
+                    ? productDetailsList.reduce((sum, item) => sum + Number(item.quantity || 1), 0)
+                    : 0
 
-                      const orderStatus = order.status || 'Pending'
-                      const isPending = orderStatus === 'Pending'
-                      const isShipped = orderStatus === 'Shipped'
+                  const orderStatus = order.status || 'Pending'
+                  const isPending = orderStatus === 'Pending'
+                  const orderDate = order.timestamp?.toDate
+                    ? order.timestamp.toDate().toLocaleDateString()
+                    : order.date || '—'
 
-                      return (
-                        <Fragment key={order.id}>
-                          <tr
-                            className={idx % 2 === 0 ? 'bg-gray-50 hover:bg-blue-50 transition' : 'bg-white hover:bg-blue-50 transition'}
-                          >
-                            <td className="px-4 py-3 border-b border-gray-200">
-                              <span className="text-gray-900 font-medium">
-                                {order.timestamp?.toDate
-                                  ? order.timestamp.toDate().toLocaleDateString()
-                                  : order.date || '—'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 border-b border-gray-200">
+                  return (
+                    <div key={order.id}>
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-1">
                               <div>
-                                <div className="font-semibold text-gray-900">{order.name}</div>
-                                {hasMultipleItems && (
-                                  <span className="text-xs text-blue-600 font-medium">
-                                    ({productDetailsList.length} items)
-                                  </span>
-                                )}
+                                <div className="text-sm sm:text-base font-semibold text-gray-900 mb-0.5">{order.name}</div>
+                                <div className="text-xs sm:text-sm text-gray-500">{orderDate}</div>
                               </div>
-                            </td>
-                            <td className="px-4 py-3 border-b border-gray-200">
-                              {hasMultipleItems ? (
-                                <button
-                                  onClick={() => toggleOrderExpansion(order.id)}
-                                  className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
+                              <div className="sm:ml-4">
+                                <select
+                                  value={orderStatus}
+                                  onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                                  className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium border-2 transition cursor-pointer ${
+                                    isPending
+                                      ? 'bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100'
+                                      : 'bg-green-50 border-green-300 text-green-700 hover:bg-green-100'
+                                  }`}
                                 >
-                                  {isExpanded ? 'Hide' : 'Show'} {productDetailsList.length} items
-                                </button>
+                                  <option value="Pending">Pending</option>
+                                  <option value="Shipped">Shipped</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div className="mt-2 space-y-1">
+                              {hasMultipleItems ? (
+                                <>
+                                  <div className="text-xs sm:text-sm">
+                                    <span className="text-gray-500">Items: </span>
+                                    <button
+                                      onClick={() => toggleOrderExpansion(order.id)}
+                                      className="text-blue-600 hover:text-blue-800 underline font-medium"
+                                    >
+                                      {isExpanded ? 'Hide' : 'Show'} {productDetailsList.length} items
+                                    </button>
+                                  </div>
+                                  <div className="text-xs sm:text-sm">
+                                    <span className="text-gray-500">Total Quantity: </span>
+                                    <span className="text-gray-700">{totalQuantity}</span>
+                                  </div>
+                                </>
                               ) : (
-                                <span className="text-gray-700">{productDetailsList[0]?.category || '—'}</span>
+                                <div className="text-xs sm:text-sm">
+                                  <span className="text-gray-500">Product: </span>
+                                  <span className="text-gray-700">{productDetailsList[0]?.category || productDetailsList[0]?.name || '—'}</span>
+                                  {productDetailsList[0]?.quantity && (
+                                    <>
+                                      <span className="text-gray-500 ml-2">Quantity: </span>
+                                      <span className="text-gray-700">{productDetailsList[0].quantity}</span>
+                                    </>
+                                  )}
+                                  {productDetailsList[0]?.sizeType && (
+                                    <>
+                                      <span className="text-gray-500 ml-2">Type: </span>
+                                      <span className="text-gray-700">{productDetailsList[0].sizeType}</span>
+                                    </>
+                                  )}
+                                </div>
                               )}
-                            </td>
-                            <td className="px-4 py-3 border-b border-gray-200">
-                              <span className="text-gray-700">{hasMultipleItems ? totalQuantity : (productDetailsList[0]?.quantity ?? '—')}</span>
-                            </td>
-                            <td className="px-4 py-3 border-b border-gray-200">
-                              <span className="text-gray-700">{hasMultipleItems ? '—' : (productDetailsList[0]?.sizeType || '—')}</span>
-                            </td>
-                            <td className="px-4 py-3 border-b border-gray-200">
-                              <span className="font-semibold text-gray-900">
-                                {formatAmount(hasMultipleItems ? totalPrice : (productDetailsList[0]?.price ?? order.price ?? 0))}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 border-b border-gray-200">
-                              <select
-                                value={orderStatus}
-                                onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition cursor-pointer ${
-                                  isPending
-                                    ? 'bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100'
-                                    : 'bg-green-50 border-green-300 text-green-700 hover:bg-green-100'
-                                }`}
-                              >
-                                <option value="Pending">Pending</option>
-                                <option value="Shipped">Shipped</option>
-                              </select>
-                            </td>
-                          </tr>
-                          {hasMultipleItems && isExpanded && productDetailsList.map((item, itemIdx) => (
-                            <tr
-                              key={`${order.id}-item-${itemIdx}`}
-                              className="bg-blue-50 border-l-4 border-blue-400"
-                            >
-                              <td className="px-4 py-2 border-b border-gray-200"></td>
-                              <td className="px-4 py-2 border-b border-gray-200 pl-8">
-                                <span className="text-sm text-gray-600">• {item.name || item.category}</span>
-                              </td>
-                              <td className="px-4 py-2 border-b border-gray-200">
-                                <span className="text-sm text-gray-700">{item.category || '—'}</span>
-                              </td>
-                              <td className="px-4 py-2 border-b border-gray-200">
-                                <span className="text-sm text-gray-700">{item.quantity ?? '—'}</span>
-                              </td>
-                              <td className="px-4 py-2 border-b border-gray-200">
-                                <span className="text-sm text-gray-700">{item.sizeType || '—'}</span>
-                              </td>
-                              <td className="px-4 py-2 border-b border-gray-200">
-                                <span className="text-sm font-medium text-gray-900">
-                                  {formatAmount(item.price || 0)}
+                              <div className="text-xs sm:text-sm">
+                                <span className="text-gray-500">Price: </span>
+                                <span className="text-gray-700 font-semibold">
+                                  {formatAmount(hasMultipleItems ? totalPrice : (productDetailsList[0]?.price ?? order.price ?? 0))}
                                 </span>
-                              </td>
-                              <td className="px-4 py-2 border-b border-gray-200"></td>
-                            </tr>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Expanded items for multiple products */}
+                      {hasMultipleItems && isExpanded && (
+                        <div className="mt-2 ml-4 space-y-2">
+                          {productDetailsList.map((item, itemIdx) => (
+                            <div
+                              key={`${order.id}-item-${itemIdx}`}
+                              className="bg-blue-50 border-l-4 border-blue-400 rounded-lg p-2 sm:p-3"
+                            >
+                              <div className="text-xs sm:text-sm space-y-1">
+                                <div>
+                                  <span className="text-gray-500">Product: </span>
+                                  <span className="text-gray-700 font-medium">• {item.name || item.category}</span>
+                                </div>
+                                {item.quantity && (
+                                  <div>
+                                    <span className="text-gray-500">Quantity: </span>
+                                    <span className="text-gray-700">{item.quantity}</span>
+                                  </div>
+                                )}
+                                {item.sizeType && (
+                                  <div>
+                                    <span className="text-gray-500">Type: </span>
+                                    <span className="text-gray-700">{item.sizeType}</span>
+                                  </div>
+                                )}
+                                <div>
+                                  <span className="text-gray-500">Price: </span>
+                                  <span className="text-gray-700 font-semibold">{formatAmount(item.price || 0)}</span>
+                                </div>
+                              </div>
+                            </div>
                           ))}
-                        </Fragment>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>

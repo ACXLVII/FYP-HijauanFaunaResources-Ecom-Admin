@@ -231,18 +231,31 @@ export default function ReviewAndInquiryPage() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 lg:p-10 bg-white min-h-screen overflow-auto lg:ml-72">
+      <main className="flex-1 p-4 sm:p-6 lg:p-10 bg-white min-h-screen overflow-auto lg:ml-72">
+        {/* Mobile Header with Menu Button */}
+        <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 flex items-center justify-between mb-4">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-2"
+            aria-label="Open menu"
+          >
+            <Bars3Icon className="h-6 w-6" />
+          </button>
+          <img alt="Logo" src="/logo.png" className="h-10 w-auto" />
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Reviews and Inquiries</h1>
-            <p className="text-gray-600">Manage customer reviews and inquiries in one place</p>
+          <div className="mb-4 sm:mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Reviews and Inquiries</h1>
+            <p className="text-sm sm:text-base text-gray-600">Manage customer reviews and inquiries in one place</p>
           </div>
 
           {/* Tabs */}
-          <div className="bg-white rounded-lg shadow-md mb-6">
+          <div className="bg-white rounded-lg shadow-md mb-4 sm:mb-6">
             <div className="border-b border-gray-200">
-              <nav className="flex -mb-px">
+              <nav className="flex -mb-px overflow-x-auto">
                 <button
                   onClick={() => {
                     setActiveTab('reviews')
@@ -253,13 +266,13 @@ export default function ReviewAndInquiryPage() {
                     activeTab === 'reviews'
                       ? 'border-blue-600 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-                    'flex items-center gap-2 px-6 py-4 border-b-2 font-semibold transition-colors'
+                    'flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-3 sm:py-4 border-b-2 font-semibold transition-colors text-sm sm:text-base whitespace-nowrap'
                   )}
                 >
-                  <StarIcon className="h-5 w-5" />
+                  <StarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   Reviews
                   {reviews.length > 0 && (
-                    <span className="ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">
+                    <span className="ml-1 sm:ml-2 bg-blue-100 text-blue-700 px-1.5 sm:px-2 py-0.5 rounded-full text-xs">
                       {reviews.length}
                     </span>
                   )}
@@ -274,13 +287,13 @@ export default function ReviewAndInquiryPage() {
                     activeTab === 'inquiries'
                       ? 'border-blue-600 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-                    'flex items-center gap-2 px-6 py-4 border-b-2 font-semibold transition-colors'
+                    'flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-3 sm:py-4 border-b-2 font-semibold transition-colors text-sm sm:text-base whitespace-nowrap'
                   )}
                 >
-                  <ChatBubbleLeftRightIcon className="h-5 w-5" />
+                  <ChatBubbleLeftRightIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   Inquiries
                   {inquiries.length > 0 && (
-                    <span className="ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">
+                    <span className="ml-1 sm:ml-2 bg-blue-100 text-blue-700 px-1.5 sm:px-2 py-0.5 rounded-full text-xs">
                       {inquiries.length}
                     </span>
                   )}
@@ -289,25 +302,25 @@ export default function ReviewAndInquiryPage() {
             </div>
 
             {/* Search Bar */}
-            <div className="p-4 border-b border-gray-200">
+            <div className="p-3 sm:p-4 border-b border-gray-200">
               <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder={activeTab === 'reviews' ? 'Search reviews by customer or comment...' : 'Search inquiries by name, email, phone, or message...'}
+                  placeholder={activeTab === 'reviews' ? 'Search reviews...' : 'Search inquiries...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 />
               </div>
             </div>
 
             {/* Star Rating Filter (only for Reviews tab) */}
             {activeTab === 'reviews' && (
-              <div className="p-4 border-b border-gray-200 bg-gray-50">
-                <div className="flex items-center gap-4 flex-wrap">
-                  <span className="text-sm font-semibold text-gray-700">Filter by Rating:</span>
-                  <div className="flex gap-2">
+              <div className="p-3 sm:p-4 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+                  <span className="text-xs sm:text-sm font-semibold text-gray-700">Filter by Rating:</span>
+                  <div className="flex gap-1 sm:gap-2">
                     {[1, 2, 3, 4, 5].map((rating) => (
                       <button
                         key={rating}
@@ -315,14 +328,14 @@ export default function ReviewAndInquiryPage() {
                           setSelectedRating(selectedRating === rating ? null : rating)
                         }
                         className={classNames(
-                          'px-4 py-2 rounded-md border transition',
+                          'px-2 sm:px-4 py-1.5 sm:py-2 rounded-md border transition text-xs sm:text-sm',
                           selectedRating === rating
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                         )}
                       >
                         <div className="flex items-center gap-1">
-                          <StarIcon className="h-4 w-4" />
+                          <StarIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                           <span>{rating}</span>
                         </div>
                       </button>
@@ -341,174 +354,149 @@ export default function ReviewAndInquiryPage() {
             )}
 
             {/* Content Area */}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {activeTab === 'reviews' ? (
-                /* Reviews Table */
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-left text-sm text-gray-700">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="px-4 py-3 font-semibold text-gray-900">Customer</th>
-                        <th className="px-4 py-3 font-semibold text-gray-900">Rating</th>
-                        <th className="px-4 py-3 font-semibold text-gray-900">Comment</th>
-                        <th className="px-4 py-3 font-semibold text-gray-900">Images</th>
-                        <th className="px-4 py-3 font-semibold text-gray-900">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredReviews.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="px-4 py-12 text-center text-gray-500">
-                            {searchQuery || selectedRating
-                              ? 'No reviews match your filters.'
-                              : 'No reviews found yet.'}
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredReviews.map((review, idx) => {
-                          const rating = review.rating || review.stars || review.starRating || 0
-                          const customerName =
-                            review.customerName ||
-                            review.name ||
-                            review.customer ||
-                            'Anonymous'
-                          const comment = review.description || '—'
-                          const date = formatDate(review.date, review.timestamp)
-                          
-                          // Extract images - handle multiple formats
-                          let images = []
-                          if (review.images && Array.isArray(review.images)) {
-                            images = review.images
-                          } else if (review.image) {
-                            images = Array.isArray(review.image) ? review.image : [review.image]
-                          } else if (review.photos && Array.isArray(review.photos)) {
-                            images = review.photos
-                          } else if (review.photo) {
-                            images = Array.isArray(review.photo) ? review.photo : [review.photo]
-                          }
-                          // Handle if images are objects with url/src property
-                          images = images.map(img => {
-                            if (typeof img === 'string') return img
-                            if (img && typeof img === 'object') return img.url || img.src || img.image || ''
-                            return ''
-                          }).filter(img => img && img.trim() !== '')
+                /* Reviews Cards */
+                filteredReviews.length === 0 ? (
+                  <div className="px-4 py-12 text-center text-gray-500">
+                    {searchQuery || selectedRating
+                      ? 'No reviews match your filters.'
+                      : 'No reviews found yet.'}
+                  </div>
+                ) : (
+                  <div className="space-y-2 sm:space-y-3">
+                    {filteredReviews.map((review, idx) => {
+                      const rating = review.rating || review.stars || review.starRating || 0
+                      const customerName =
+                        review.customerName ||
+                        review.name ||
+                        review.customer ||
+                        'Anonymous'
+                      const comment = review.description || '—'
+                      const date = formatDate(review.date, review.timestamp)
+                      
+                      // Extract images - handle multiple formats
+                      let images = []
+                      if (review.images && Array.isArray(review.images)) {
+                        images = review.images
+                      } else if (review.image) {
+                        images = Array.isArray(review.image) ? review.image : [review.image]
+                      } else if (review.photos && Array.isArray(review.photos)) {
+                        images = review.photos
+                      } else if (review.photo) {
+                        images = Array.isArray(review.photo) ? review.photo : [review.photo]
+                      }
+                      // Handle if images are objects with url/src property
+                      images = images.map(img => {
+                        if (typeof img === 'string') return img
+                        if (img && typeof img === 'object') return img.url || img.src || img.image || ''
+                        return ''
+                      }).filter(img => img && img.trim() !== '')
 
-                          return (
-                            <tr
-                              key={review.id}
-                              className={classNames(
-                                idx % 2 === 0 ? 'bg-gray-50' : 'bg-white',
-                                'hover:bg-blue-50 transition-colors'
-                              )}
-                            >
-                              <td className="px-4 py-4 border-b border-gray-200 font-medium">
-                                {customerName}
-                              </td>
-                              <td className="px-4 py-4 border-b border-gray-200">
-                                <StarRating rating={Number(rating)} />
-                              </td>
-                              <td className="px-4 py-4 border-b border-gray-200 max-w-md">
-                                <p className="text-gray-900">{comment}</p>
-                              </td>
-                              <td className="px-4 py-4 border-b border-gray-200">
-                                {images.length > 0 ? (
-                                  <div className="flex gap-2 flex-wrap">
-                                    {images.slice(0, 3).map((imgUrl, imgIdx) => (
-                                      <img
-                                        key={imgIdx}
-                                        src={imgUrl}
-                                        alt={`Review image ${imgIdx + 1}`}
-                                        className="h-16 w-16 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition"
-                                        onClick={() => {
-                                          // Open image in new tab/window for full view
-                                          window.open(imgUrl, '_blank')
-                                        }}
-                                        onError={(e) => {
-                                          e.target.style.display = 'none'
-                                        }}
-                                      />
-                                    ))}
-                                    {images.length > 3 && (
-                                      <div className="h-16 w-16 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200 text-xs font-medium text-gray-600">
-                                        +{images.length - 3}
-                                      </div>
-                                    )}
+                      return (
+                        <div
+                          key={review.id}
+                          className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <div className="text-sm sm:text-base font-semibold text-gray-900 mb-0.5">{customerName}</div>
+                                  <div className="text-xs sm:text-sm text-gray-500">{date}</div>
+                                </div>
+                                <div className="sm:ml-4">
+                                  <StarRating rating={Number(rating)} />
+                                </div>
+                              </div>
+                              <div className="mt-2 space-y-1">
+                                <div className="text-xs sm:text-sm">
+                                  <span className="text-gray-500">Comment: </span>
+                                  <span className="text-gray-700">{comment}</span>
+                                </div>
+                                {images.length > 0 && (
+                                  <div className="text-xs sm:text-sm">
+                                    <span className="text-gray-500">Images: </span>
+                                    <div className="flex gap-2 flex-wrap mt-1">
+                                      {images.slice(0, 3).map((imgUrl, imgIdx) => (
+                                        <img
+                                          key={imgIdx}
+                                          src={imgUrl}
+                                          alt={`Review image ${imgIdx + 1}`}
+                                          className="h-12 w-12 sm:h-16 sm:w-16 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition"
+                                          onClick={() => {
+                                            window.open(imgUrl, '_blank')
+                                          }}
+                                          onError={(e) => {
+                                            e.target.style.display = 'none'
+                                          }}
+                                        />
+                                      ))}
+                                      {images.length > 3 && (
+                                        <div className="h-12 w-12 sm:h-16 sm:w-16 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200 text-xs font-medium text-gray-600">
+                                          +{images.length - 3}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                ) : (
-                                  <span className="text-gray-400 text-sm">No images</span>
                                 )}
-                              </td>
-                              <td className="px-4 py-4 border-b border-gray-200 text-gray-600">
-                                {date}
-                              </td>
-                            </tr>
-                          )
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
               ) : (
-                /* Inquiries Table */
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-left text-sm text-gray-700">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="px-4 py-3 font-semibold text-gray-900">Name</th>
-                        <th className="px-4 py-3 font-semibold text-gray-900">Email</th>
-                        <th className="px-4 py-3 font-semibold text-gray-900">Phone</th>
-                        <th className="px-4 py-3 font-semibold text-gray-900">Message</th>
-                        <th className="px-4 py-3 font-semibold text-gray-900">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredInquiries.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="px-4 py-12 text-center text-gray-500">
-                            {searchQuery
-                              ? 'No inquiries match your search.'
-                              : 'No inquiries found yet.'}
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredInquiries.map((inquiry, idx) => {
-                          const name = inquiry.name || inquiry.customerName || inquiry.customer || 'Anonymous'
-                          const email = inquiry.email || '—'
-                          // Get phoneNumber from Contact collection
-                          const phone = inquiry.phoneNumber ? String(inquiry.phoneNumber).trim() : '—'
-                          const message = inquiry.message || inquiry.description || inquiry.comment || '—'
-                          const date = formatDate(inquiry.date, inquiry.timestamp)
+                /* Inquiries Cards */
+                filteredInquiries.length === 0 ? (
+                  <div className="px-4 py-12 text-center text-gray-500">
+                    {searchQuery
+                      ? 'No inquiries match your search.'
+                      : 'No inquiries found yet.'}
+                  </div>
+                ) : (
+                  <div className="space-y-2 sm:space-y-3">
+                    {filteredInquiries.map((inquiry, idx) => {
+                      const name = inquiry.name || inquiry.customerName || inquiry.customer || 'Anonymous'
+                      const email = inquiry.email || '—'
+                      const phone = inquiry.phoneNumber ? String(inquiry.phoneNumber).trim() : '—'
+                      const message = inquiry.message || inquiry.description || inquiry.comment || '—'
+                      const date = formatDate(inquiry.date, inquiry.timestamp)
 
-                          return (
-                            <tr
-                              key={inquiry.id}
-                              className={classNames(
-                                idx % 2 === 0 ? 'bg-gray-50' : 'bg-white',
-                                'hover:bg-blue-50 transition-colors'
-                              )}
-                            >
-                              <td className="px-4 py-4 border-b border-gray-200 font-medium">
-                                {name}
-                              </td>
-                              <td className="px-4 py-4 border-b border-gray-200 text-gray-600">
-                                {email}
-                              </td>
-                              <td className="px-4 py-4 border-b border-gray-200 text-gray-600">
-                                {phone}
-                              </td>
-                              <td className="px-4 py-4 border-b border-gray-200 max-w-md">
-                                <p className="text-gray-900">{message}</p>
-                              </td>
-                              <td className="px-4 py-4 border-b border-gray-200 text-gray-600">
-                                {date}
-                              </td>
-                            </tr>
-                          )
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                      return (
+                        <div
+                          key={inquiry.id}
+                          className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="mb-2">
+                                <div className="text-sm sm:text-base font-semibold text-gray-900 mb-0.5">{name}</div>
+                                <div className="text-xs sm:text-sm text-gray-500">{date}</div>
+                              </div>
+                              <div className="mt-2 space-y-1">
+                                <div className="text-xs sm:text-sm">
+                                  <span className="text-gray-500">Email: </span>
+                                  <span className="text-gray-700">{email}</span>
+                                </div>
+                                <div className="text-xs sm:text-sm">
+                                  <span className="text-gray-500">Phone: </span>
+                                  <span className="text-gray-700">{phone}</span>
+                                </div>
+                                <div className="text-xs sm:text-sm">
+                                  <span className="text-gray-500">Message: </span>
+                                  <span className="text-gray-700">{message}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
               )}
             </div>
           </div>

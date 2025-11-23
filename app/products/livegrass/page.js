@@ -7,6 +7,7 @@ import {
   ShoppingBagIcon,
   FolderIcon,
   XMarkIcon,
+  Bars3Icon,
 } from '@heroicons/react/24/outline'
 import { StarIcon } from '@heroicons/react/20/solid'
 import { useRouter } from 'next/navigation'
@@ -96,30 +97,30 @@ function Sidebar({ currentRoute, onLogout }) {
                       }
                       className={classNames(
                         isParentActive
-                          ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                          : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                        'group flex gap-x-4 rounded-md p-3 text-lg font-semibold w-full text-left transition-colors duration-200'
+                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
+                        'group flex items-center gap-x-3 rounded-lg p-3 text-base font-semibold w-full text-left transition-all duration-200'
                       )}
                     >
-                      <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
-                      {item.name}
+                      <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                      <span className="flex-1">{item.name}</span>
                       <svg
                         className={classNames(
-                          'ml-auto h-5 w-5 shrink-0',
+                          'h-4 w-4 shrink-0 text-gray-400',
                           isOpen ? 'rotate-90' : 'rotate-0',
                           'transform transition-transform duration-200'
                         )}
-                        viewBox="0 0 20 20"
                         fill="none"
+                        viewBox="0 0 24 24"
                         stroke="currentColor"
                         strokeWidth={2}
                       >
-                        <path d="M6 6L14 10L6 14V6Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
 
                     {isOpen && (
-                      <ul className="mt-1 ml-8 space-y-1">
+                      <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
                         {item.children.map((subitem) => {
                           const isSubActive = activeNav === subitem.name
                           return (
@@ -129,13 +130,13 @@ function Sidebar({ currentRoute, onLogout }) {
                                 onClick={(e) => {
                                   e.preventDefault()
                                   setActiveNav(subitem.name)
-                                  router.push(subitem.href) // Navigate to subpage
+                                  router.push(subitem.href)
                                 }}
                                 className={classNames(
                                   isSubActive
-                                    ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                                    : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                                  'block rounded-md p-2 text-base font-medium'
+                                    ? 'bg-blue-100 text-blue-700 font-semibold'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
+                                  'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
                                 )}
                               >
                                 {subitem.name}
@@ -184,6 +185,9 @@ function Sidebar({ currentRoute, onLogout }) {
 
 export default function ProductsPage() {
   const router = useRouter()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [activeNav, setActiveNav] = useState('Live Grass')
+  const [openMenus, setOpenMenus] = useState({ products: true })
 
   const [expandedProductId, setExpandedProductId] = useState(null)
   const [products, setProducts] = useState([])
@@ -326,107 +330,263 @@ export default function ProductsPage() {
 
   return (
     <div className="bg-gray-50 min-h-screen flex">
+      {/* Mobile Sidebar */}
+      <div className={`lg:hidden fixed inset-0 z-50 bg-gray-900 bg-opacity-75 ${sidebarOpen ? 'block' : 'hidden'}`}>
+        <div className="flex flex-col w-64 bg-white h-full shadow-lg border-r">
+          <div className="flex items-center px-4 pt-4 mb-8">
+            <img alt="Logo" src="/logo.png" className="h-14 w-auto" />
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="text-gray-400 ml-auto hover:text-gray-700 transition"
+              aria-label="Close sidebar"
+            >
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+          </div>
+          <nav className="flex-1">
+            <ul role="list" className="space-y-2 px-2">
+              {navigation.map((item) => {
+                const isParentActive =
+                  activeNav === item.name ||
+                  (item.children && item.children.some((c) => c.name === activeNav))
+                const isOpen = openMenus[item.name.toLowerCase()] || false
+
+                if (item.children) {
+                  return (
+                    <li key={item.name}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOpenMenus((prev) => ({
+                            ...prev,
+                            [item.name.toLowerCase()]: !prev[item.name.toLowerCase()],
+                          }))
+                        }
+                        className={classNames(
+                          isParentActive
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
+                          'group flex items-center gap-x-3 rounded-lg p-3 text-base font-semibold w-full text-left transition-all duration-200'
+                        )}
+                      >
+                        <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                        <span className="flex-1">{item.name}</span>
+                        <svg
+                          className={classNames(
+                            'h-4 w-4 shrink-0 text-gray-400',
+                            isOpen ? 'rotate-90' : 'rotate-0',
+                            'transform transition-transform duration-200'
+                          )}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+
+                      {isOpen && (
+                        <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
+                          {item.children.map((subitem) => {
+                            const isSubActive = activeNav === subitem.name
+                            return (
+                              <li key={subitem.name}>
+                                <a
+                                  href={subitem.href}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    setActiveNav(subitem.name)
+                                    router.push(subitem.href)
+                                    setSidebarOpen(false)
+                                  }}
+                                  className={classNames(
+                                    isSubActive
+                                      ? 'bg-blue-100 text-blue-700 font-semibold'
+                                      : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
+                                    'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
+                                  )}
+                                >
+                                  {subitem.name}
+                                </a>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                }
+
+                return (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      onClick={(e) => {
+                        if (item.name === 'Logout') {
+                          e.preventDefault()
+                          setShowLogoutConfirm(true)
+                        } else {
+                          setActiveNav(item.name)
+                          router.push(item.href)
+                          setSidebarOpen(false)
+                        }
+                      }}
+                      className={classNames(
+                        activeNav === item.name
+                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
+                        'group flex gap-x-3 rounded-lg p-3 text-base font-semibold transition-all duration-200'
+                      )}
+                    >
+                      <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                      {item.name}
+                    </a>
+                  </li>
+                )
+              })}
+            </ul>
+          </nav>
+        </div>
+      </div>
+
       <Sidebar currentRoute={currentRoute} onLogout={() => setShowLogoutConfirm(true)} />
-      <main className="flex-1 ml-0 lg:ml-72 p-6 overflow-auto">
-        <h2 className="text-2xl font-semibold text-black mb-4">Products - Live Grass</h2>
+      <main className="flex-1 ml-0 lg:ml-72 p-4 sm:p-6 overflow-auto">
+        {/* Mobile Header with Menu Button */}
+        <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 flex items-center justify-between mb-4">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-2"
+            aria-label="Open menu"
+          >
+            <Bars3Icon className="h-6 w-6" />
+          </button>
+          <img alt="Logo" src="/logo.png" className="h-10 w-auto" />
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+
+        <h2 className="text-xl sm:text-2xl font-semibold text-black mb-4">Products - Live Grass</h2>
         <button
           onClick={() => setIsModalOpen(true)}
           className="mb-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           Add Product
         </button>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="space-y-2 sm:space-y-3">
           {products.map((prod) => {
             const isExpanded = expandedProductId === prod.id
+            const mainImage = prod.images && prod.images.length > 0
+              ? typeof prod.images[0] === 'string'
+                ? prod.images[0]
+                : prod.images[0]?.src
+              : ''
             return (
               <div
                 key={prod.id}
-                className="bg-white shadow rounded-lg overflow-hidden flex flex-col h-full"
+                className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4"
               >
-                <img
-                  src={
-                    prod.images && prod.images.length > 0
-                      ? typeof prod.images[0] === 'string'
-                        ? prod.images[0]
-                        : prod.images[0]?.src
-                      : ''
-                  }
-                  alt={prod.name || 'Product Image'}
-                  className="h-48 w-full object-cover"
-                />
-                <div className="p-4 flex-1 flex flex-col">
-                  <h3 className="font-semibold text-lg text-black">{prod.name}</h3>
-                  <p className="text-sm text-gray-600 mb-2">{prod.description}</p>
-                  {prod.inStock === false ? (
-                    <p className="text-red-600 font-medium">Out of Stock</p>
-                  ) : (
-                    <p className="text-green-600 font-medium">In Stock</p>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  {mainImage && (
+                    <img
+                      src={mainImage}
+                      alt={prod.name || 'Product Image'}
+                      className="w-full sm:w-32 h-32 object-cover rounded-lg"
+                    />
                   )}
-                  <button
-                    className="text-blue-600 text-sm underline mb-2"
-                    onClick={() => setExpandedProductId(isExpanded ? null : prod.id)}
-                  >
-                    {isExpanded ? 'Hide Details' : 'View Details'}
-                  </button>
-                  {isExpanded && (
-                    <div className="text-sm text-gray-700 space-y-4 mt-2">
-                      {prod.category && <p><strong>Category:</strong> {prod.category}</p>}
-                      {prod.priceDetails?.length > 0 && (
-                        <div>
-                          <p className="font-semibold">Price Details:</p>
-                          <ul className="list-disc list-inside">
-                            {prod.priceDetails.map((p, i) => (
-                              <li key={i}>
-                                {p.measurement} - RM {p.price} {p.sizeType && `(${p.sizeType})`}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {prod.features?.length > 0 && (
-                        <div>
-                          <p className="font-semibold">Features:</p>
-                          <ul className="list-disc list-inside space-y-1">
-                            {prod.features.map((f, i) => (
-                              <li key={i}>
-                                <span className="font-semibold">{f.title}:</span> {f.description}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {prod.images?.length > 0 && (
-                        <div>
-                          <p className="font-semibold">Images:</p>
-                          <div className="grid grid-cols-2 gap-2">
-                            {prod.images.map((img, idx) => (
-                              <div key={idx}>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="text-sm sm:text-base font-semibold text-gray-900 mb-0.5">{prod.name}</div>
+                        {prod.category && (
+                          <div className="text-xs sm:text-sm text-gray-500">Category: {prod.category}</div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {prod.inStock === false ? (
+                          <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Out of Stock</span>
+                        ) : (
+                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">In Stock</span>
+                        )}
+                      </div>
+                    </div>
+                    {prod.description && (
+                      <div className="text-xs sm:text-sm text-gray-700 mb-2">{prod.description}</div>
+                    )}
+                    {prod.priceDetails?.length > 0 && (
+                      <div className="text-xs sm:text-sm mb-2">
+                        <span className="text-gray-500">Starting from: </span>
+                        <span className="text-gray-700 font-semibold">
+                          RM {Math.min(...prod.priceDetails.map(p => Number(p.price) || 0)).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    <button
+                      className="text-blue-600 text-xs sm:text-sm underline mb-2"
+                      onClick={() => setExpandedProductId(isExpanded ? null : prod.id)}
+                    >
+                      {isExpanded ? 'Hide Details' : 'View Details'}
+                    </button>
+                    {isExpanded && (
+                      <div className="text-xs sm:text-sm text-gray-700 space-y-3 mt-3 pt-3 border-t border-gray-200">
+                        {prod.priceDetails?.length > 0 && (
+                          <div>
+                            <p className="font-semibold text-gray-900 mb-1">Price Details:</p>
+                            <div className="space-y-1">
+                              {prod.priceDetails.map((p, i) => (
+                                <div key={i} className="bg-white p-2 rounded">
+                                  <span className="text-gray-700">
+                                    {p.measurement} - RM {p.price} {p.sizeType && `(${p.sizeType})`}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {prod.features?.length > 0 && (
+                          <div>
+                            <p className="font-semibold text-gray-900 mb-1">Features:</p>
+                            <div className="space-y-1">
+                              {prod.features.map((f, i) => (
+                                <div key={i} className="bg-white p-2 rounded">
+                                  <span className="font-medium text-gray-900">{f.title}:</span>{' '}
+                                  <span className="text-gray-600">{f.description}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {prod.images?.length > 1 && (
+                          <div>
+                            <p className="font-semibold text-gray-900 mb-1">Additional Images:</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {prod.images.slice(1).map((img, idx) => (
                                 <img
+                                  key={idx}
                                   src={typeof img === 'string' ? img : img.src}
                                   alt={`Image ${idx + 1}`}
-                                  className="h-24 w-full object-cover rounded"
+                                  className="h-20 w-full object-cover rounded"
                                 />
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
+                    )}
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
+                      <button
+                        onClick={() => handleEditProduct(prod.id)}
+                        className="flex-1 bg-green-500 text-white px-3 py-1.5 rounded hover:bg-green-600 text-xs sm:text-sm font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => confirmDelete(prod.id)}
+                        className="flex-1 bg-red-500 text-white px-3 py-1.5 rounded hover:bg-red-600 text-xs sm:text-sm font-medium"
+                      >
+                        Delete
+                      </button>
                     </div>
-                  )}
-                </div>
-                <div className="flex justify-between px-4 pb-4 mt-auto">
-                  <button
-                    onClick={() => handleEditProduct(prod.id)}
-                    className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => confirmDelete(prod.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
-                  >
-                    Delete
-                  </button>
+                  </div>
                 </div>
               </div>
             )

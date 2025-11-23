@@ -13,6 +13,7 @@ import {
   PencilIcon,
   TrashIcon,
   MagnifyingGlassIcon,
+  Bars3Icon,
 } from '@heroicons/react/24/outline'
 import { db } from '../firebase'
 import {
@@ -98,6 +99,7 @@ function Sidebar({ onLogout }) {
 
 export default function ProductsPage() {
   const router = useRouter()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [expandedProductId, setExpandedProductId] = useState(null)
   const [productsByCollection, setProductsByCollection] = useState({
     LiveGrass: [],
@@ -250,35 +252,90 @@ export default function ProductsPage() {
 
   return (
     <div className="bg-gray-50 min-h-screen flex">
+      {/* Mobile Sidebar */}
+      <div className={`lg:hidden fixed inset-0 z-50 bg-gray-900 bg-opacity-75 ${sidebarOpen ? 'block' : 'hidden'}`}>
+        <div className="flex flex-col w-64 bg-white h-full shadow-lg border-r">
+          <div className="flex items-center px-4 pt-4 mb-8">
+            <img alt="Logo" src="/logo.png" className="h-14 w-auto" />
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="text-gray-400 ml-auto hover:text-gray-700 transition"
+              aria-label="Close sidebar"
+            >
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+          </div>
+          <nav className="flex-1">
+            <ul role="list" className="space-y-2 px-2">
+              {navigation.map((item) => (
+                <li key={item.name}>
+                  <a
+                    href={item.href}
+                    onClick={(e) => {
+                      if (item.name === 'Logout') {
+                        e.preventDefault()
+                        setShowLogoutConfirm(true)
+                      }
+                      setSidebarOpen(false)
+                    }}
+                    className={classNames(
+                      'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
+                      'group flex gap-x-4 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
+                    )}
+                  >
+                    <item.icon className="h-6 w-6" />
+                    {item.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+      </div>
+
       <Sidebar onLogout={() => setShowLogoutConfirm(true)} />
 
-      <main className="flex-1 ml-0 lg:ml-72 p-6 lg:p-8">
+      <main className="flex-1 ml-0 lg:ml-72 p-4 sm:p-6 lg:p-8">
+        {/* Mobile Header with Menu Button */}
+        <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 flex items-center justify-between mb-4">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-2"
+            aria-label="Open menu"
+          >
+            <Bars3Icon className="h-6 w-6" />
+          </button>
+          <img alt="Logo" src="/logo.png" className="h-10 w-auto" />
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+
         {/* Header Section */}
-        <div className="mb-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4 sm:mb-6">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Products</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Products</h2>
               <p className="text-sm text-gray-500 mt-1">
               </p>
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md hover:shadow-lg font-semibold"
+              className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md hover:shadow-lg font-semibold text-sm sm:text-base"
             >
-              <PlusIcon className="h-5 w-5" />
-              Add Product
+              <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden sm:inline">Add Product</span>
+              <span className="sm:hidden">Add</span>
             </button>
           </div>
 
           {/* Collection Tabs and Search */}
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between">
+            <div className="flex gap-2 w-full sm:w-auto">
               {productCollections.map((col) => (
                 <button
                   key={col.value}
                   onClick={() => setActiveCollection(col.value)}
                   className={classNames(
-                    'px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-sm',
+                    'flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition shadow-sm',
                     activeCollection === col.value
                       ? 'bg-blue-600 text-white shadow-md'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
@@ -291,13 +348,13 @@ export default function ProductsPage() {
             
             {/* Search Bar */}
             <div className="relative w-full sm:w-64">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 text-sm"
               />
             </div>
           </div>
@@ -305,12 +362,12 @@ export default function ProductsPage() {
 
         {/* Products Grid */}
         {products.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <ShoppingBagIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-12 text-center">
+            <ShoppingBagIcon className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
               {searchQuery ? 'No products found' : 'No products yet'}
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-sm sm:text-base text-gray-500 mb-6">
               {searchQuery 
                 ? 'Try adjusting your search terms'
                 : `Get started by adding your first ${activeCollection === 'LiveGrass' ? 'Live Grass' : 'Artificial Grass'} product`
@@ -319,15 +376,15 @@ export default function ProductsPage() {
             {!searchQuery && (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
+                className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-sm sm:text-base"
               >
-                <PlusIcon className="h-5 w-5" />
+                <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                 Add Your First Product
               </button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {products.map((prod) => {
               const uniqueId = `${prod.collection}-${prod.id}`
               const isExpanded = expandedProductId === uniqueId

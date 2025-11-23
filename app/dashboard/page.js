@@ -9,6 +9,7 @@ import {
   FolderIcon,
   XMarkIcon,
   StarIcon,
+  Bars3Icon,
 } from '@heroicons/react/24/outline'
 import { db } from '../firebase'
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore'
@@ -26,9 +27,9 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
 
-// Status badge color helper - matches Orders page styling
+// Status badge color helper - pill-shaped badges
 function statusBadge(status) {
-  const base = 'px-2 py-1 rounded-full text-xs font-semibold'
+  const base = 'px-2.5 py-1 rounded-full text-xs font-semibold'
   switch (status) {
     case "Shipped":
       return base + " bg-green-100 text-green-800";
@@ -120,9 +121,11 @@ export default function DashboardPage() {
         const price = calculateTotalPrice(order.products || order.product, order.price)
         let date = '—'
         if (order.timestamp?.toDate) {
-          date = order.timestamp.toDate().toLocaleDateString()
+          const d = order.timestamp.toDate()
+          date = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`
         } else if (order.timestamp?.seconds) {
-          date = new Date(order.timestamp.seconds * 1000).toLocaleDateString()
+          const d = new Date(order.timestamp.seconds * 1000)
+          date = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`
         } else if (order.date) {
           date = typeof order.date === 'string' ? order.date : String(order.date)
         }
@@ -233,23 +236,23 @@ export default function DashboardPage() {
                     onClick={(e) => handleNavigationClick(item, e)}
                     className={classNames(
                       isActiveNav(item.name)
-                        ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                        : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                      'group flex gap-x-4 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
+                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
+                      'group flex items-center gap-x-3 rounded-lg p-3 text-base font-semibold transition-all duration-200'
                     )}
                   >
-                    <item.icon className="h-6 w-6" />
-                    {item.name}
+                    <item.icon className="h-5 w-5 shrink-0" />
+                    <span className="flex-1">{item.name}</span>
                     {/* Always show arrow icon for Products */}
                     {item.name === 'Products' && (
                       <svg
-                        className="ml-auto h-5 w-5 shrink-0 text-gray-400"
-                        viewBox="0 0 20 20"
+                        className="h-4 w-4 shrink-0 text-gray-400"
                         fill="none"
+                        viewBox="0 0 24 24"
                         stroke="currentColor"
                         strokeWidth={2}
                       >
-                        <path d="M6 6L14 10L6 14V6Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     )}
                   </a>
@@ -262,66 +265,80 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <div className="flex flex-col lg:pl-72 w-full">
-        <main className="p-8 flex-1 overflow-auto">
-          <h3 className="text-2xl font-bold text-black mb-8">Dashboard</h3>
+        {/* Mobile Header with Menu Button */}
+        <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-2"
+            aria-label="Open menu"
+          >
+            <Bars3Icon className="h-6 w-6" />
+          </button>
+          <img alt="Logo" src="/logo.png" className="h-10 w-auto" />
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+        
+        <main className="p-4 sm:p-6 lg:p-8 flex-1 overflow-auto bg-gray-50">
+          <h3 className="text-xl sm:text-2xl font-bold text-black mb-6">Dashboard</h3>
 
           {/* Stats Cards */}
-          <dl className="grid grid-cols-1 gap-6 sm:grid-cols-3 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {stats.map((item) => (
               <div
                 key={item.name}
-                className="overflow-hidden rounded-xl bg-white px-6 py-7 shadow transition hover:shadow-lg border"
+                className="bg-white rounded-lg px-6 py-5 shadow border border-gray-200"
               >
-                <dt className="truncate text-sm font-medium text-gray-500">{item.name}</dt>
-                <dd className="mt-3 text-3xl font-semibold tracking-tight text-gray-900">
+                <div className="text-sm font-medium text-gray-500 mb-2">{item.name}</div>
+                <div className="text-3xl font-semibold text-gray-900">
                   {item.stat}
-                </dd>
+                </div>
               </div>
             ))}
-          </dl>
+          </div>
 
           {/* Recent Orders */}
-          <section className="bg-white rounded-xl shadow p-8 border">
-            <h2 className="text-lg font-semibold mb-6 text-gray-700">Recent Orders</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm text-left border-collapse">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-2 font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">Date</th>
-                    <th className="px-4 py-2 font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">Name</th>
-                    <th className="px-4 py-2 font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">Product</th>
-                    <th className="px-4 py-2 font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">Price</th>
-                    <th className="px-4 py-2 font-semibold text-gray-500 uppercase tracking-wider border-b border-r border-gray-200">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentOrders.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
-                        No orders found yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    recentOrders.map((order, idx) => (
-                      <tr
-                        key={order.id}
-                        className={
-                          idx % 2 === 0 ? 'bg-gray-50 hover:bg-blue-50 transition' : 'bg-white hover:bg-blue-50 transition'
-                        }
-                      >
-                        <td className="whitespace-nowrap px-4 py-2 border-b border-gray-200 text-gray-900">{order.date}</td>
-                        <td className="whitespace-nowrap px-4 py-2 border-b border-gray-200 text-gray-900">{order.name}</td>
-                        <td className="whitespace-nowrap px-4 py-2 border-b border-gray-200 text-gray-900">{order.product}</td>
-                        <td className="whitespace-nowrap px-4 py-2 border-b border-gray-200 text-gray-900">{order.price}</td>
-                        <td className="whitespace-nowrap px-4 py-2 border-b border-r border-gray-200">
-                          <span className={statusBadge(order.status)}>{order.status}</span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+          <section className="bg-white rounded-lg shadow p-4 sm:p-6 border border-gray-200">
+            <h2 className="text-lg font-semibold mb-3 sm:mb-4 text-gray-900">Recent Orders</h2>
+            
+            {recentOrders.length === 0 ? (
+              <div className="px-4 py-8 text-center text-gray-500">
+                No orders found yet.
+              </div>
+            ) : (
+              <div className="space-y-2 sm:space-y-3">
+                {/* Each order is a compact card matching the image design */}
+                {recentOrders.map((order, idx) => (
+                  <div
+                    key={order.id}
+                    className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-1">
+                          <div>
+                            <div className="text-sm sm:text-base font-semibold text-gray-900 mb-0.5">{order.name}</div>
+                            <div className="text-xs sm:text-sm text-gray-500">{order.date}</div>
+                          </div>
+                          <div className="sm:ml-4">
+                            <span className={statusBadge(order.status)}>{order.status}</span>
+                          </div>
+                        </div>
+                        <div className="mt-2 space-y-1">
+                          <div className="text-xs sm:text-sm">
+                            <span className="text-gray-500">Product: </span>
+                            <span className="text-gray-700">{order.product}</span>
+                          </div>
+                          <div className="text-xs sm:text-sm">
+                            <span className="text-gray-500">Price: </span>
+                            <span className="text-gray-700">{order.price}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         </main>
       </div>

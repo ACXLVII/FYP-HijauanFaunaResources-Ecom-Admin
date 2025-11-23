@@ -8,6 +8,7 @@ import {
   FolderIcon,
   XMarkIcon,
   StarIcon,
+  Bars3Icon,
 } from '@heroicons/react/24/outline'
 import { db } from '../firebase'
 import { collection, onSnapshot } from 'firebase/firestore'
@@ -212,28 +213,29 @@ export default function CustomerPage() {
                         onClick={() => handleNavClick(item)}
                         className={classNames(
                           isParentActive
-                            ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                            : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                          'w-full text-left group flex gap-x-4 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
+                          'w-full text-left group flex items-center gap-x-3 rounded-lg p-3 text-base font-semibold transition-all duration-200'
                         )}
                       >
-                        <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
-                        {item.name}
+                        <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                        <span className="flex-1">{item.name}</span>
                         <svg
                           className={classNames(
-                            isOpen ? 'rotate-90 text-blue-500' : 'text-gray-400',
-                            'ml-auto h-5 w-5 shrink-0 transform transition-transform duration-200'
+                            'h-4 w-4 shrink-0 text-gray-400',
+                            isOpen ? 'rotate-90' : 'rotate-0',
+                            'transform transition-transform duration-200'
                           )}
-                          viewBox="0 0 20 20"
                           fill="none"
+                          viewBox="0 0 24 24"
                           stroke="currentColor"
                           strokeWidth={2}
                         >
-                          <path d="M6 6L14 10L6 14V6Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
                       {isOpen && (
-                        <ul className="mt-1 ml-8 space-y-1 border-l border-gray-300">
+                        <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
                           {item.children.map(subitem => (
                             <li key={subitem.name}>
                               <a
@@ -245,9 +247,9 @@ export default function CustomerPage() {
                                 }}
                                 className={classNames(
                                   activeNav === subitem.name
-                                    ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                                    : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                                  'block rounded-md p-2 text-base font-medium'
+                                    ? 'bg-blue-100 text-blue-700 font-semibold'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
+                                  'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
                                 )}
                               >
                                 {subitem.name}
@@ -282,50 +284,68 @@ export default function CustomerPage() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 lg:p-10 bg-white min-h-screen overflow-auto lg:ml-72">
+      <main className="flex-1 p-4 sm:p-6 lg:p-10 bg-white min-h-screen overflow-auto lg:ml-72">
+        {/* Mobile Header with Menu Button */}
+        <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 flex items-center justify-between mb-4">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-2"
+            aria-label="Open menu"
+          >
+            <Bars3Icon className="h-6 w-6" />
+          </button>
+          <img alt="Logo" src="/logo.png" className="h-10 w-auto" />
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+
         <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-lg p-6 shadow-md">
+          <div className="bg-white rounded-lg p-4 sm:p-6 shadow-md">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-black">Customer List</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-black">Customer List</h2>
                 <p className="text-sm text-gray-500">
                 </p>
               </div>
             </div>
 
-            {/* Customer Table */}
-            <div className="overflow-x-auto mt-8">
-              <table className="min-w-full text-left text-sm text-gray-700 border-collapse">
-                <thead>
-                  <tr>
-                    <th className="px-3 py-2 font-semibold border-b border-gray-200">Name</th>
-                    <th className="px-3 py-2 font-semibold border-b border-gray-200">Phone</th>
-                    <th className="px-3 py-2 font-semibold border-b border-gray-200">Email</th>
-                    <th className="px-3 py-2 font-semibold border-b border-gray-200">Address</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customersList.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-3 py-6 text-center text-gray-500">
-                        No customers found yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    customersList.map((customer, idx) => (
-                      <tr
-                        key={`${customer.name}-${idx}`}
-                        className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
-                      >
-                        <td className="px-3 py-2 border-b border-gray-100">{customer.name}</td>
-                        <td className="px-3 py-2 border-b border-gray-100">{customer.phone}</td>
-                        <td className="px-3 py-2 border-b border-gray-100">{customer.email}</td>
-                        <td className="px-3 py-2 border-b border-gray-100">{customer.address}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            {/* Customer Cards */}
+            <div className="mt-6 sm:mt-8">
+              {customersList.length === 0 ? (
+                <div className="px-4 py-8 text-center text-gray-500">
+                  No customers found yet.
+                </div>
+              ) : (
+                <div className="space-y-2 sm:space-y-3">
+                  {customersList.map((customer, idx) => (
+                    <div
+                      key={`${customer.name}-${idx}`}
+                      className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                        <div className="flex-1">
+                          <div className="mb-2">
+                            <div className="text-sm sm:text-base font-semibold text-gray-900 mb-1">{customer.name}</div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-xs sm:text-sm">
+                              <span className="text-gray-500">Phone: </span>
+                              <span className="text-gray-700">{customer.phone}</span>
+                            </div>
+                            <div className="text-xs sm:text-sm">
+                              <span className="text-gray-500">Email: </span>
+                              <span className="text-gray-700">{customer.email}</span>
+                            </div>
+                            <div className="text-xs sm:text-sm">
+                              <span className="text-gray-500">Address: </span>
+                              <span className="text-gray-700">{customer.address}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Logout Confirmation */}
