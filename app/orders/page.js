@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   HomeIcon,
   UsersIcon,
@@ -26,7 +27,14 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Products', href: '/products', icon: ShoppingBagIcon },
+  {
+    name: 'Products',
+    icon: ShoppingBagIcon,
+    children: [
+      { name: 'Live Grass', href: '/products/livegrass' },
+      { name: 'Artificial Grass', href: '/products/artificialgrass' },
+    ],
+  },
   { name: 'Customers', href: '/customers', icon: UsersIcon },
   { name: 'Orders', href: '/orders', icon: FolderIcon },
   { name: 'Review and Inquiry', href: '/review', icon: StarIcon },
@@ -94,6 +102,7 @@ function formatAmount(value) {
 
 export default function OrdersPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [openMenus, setOpenMenus] = useState({ products: false })
   const [orders, setOrders] = useState([])
   const [editingOrder, setEditingOrder] = useState(null)
   const [expandedOrders, setExpandedOrders] = useState(new Set())
@@ -110,6 +119,7 @@ export default function OrdersPage() {
   const [showForm, setShowForm] = useState(false)
   const [activeNav, setActiveNav] = useState('Orders')
   const [searchQuery, setSearchQuery] = useState('')
+  const router = useRouter()
 
   const toggleOrderExpansion = (orderId) => {
     setExpandedOrders((prev) => {
@@ -261,28 +271,108 @@ export default function OrdersPage() {
           <div className="flex items-center justify-between px-4 py-6 mb-4 border-b">
             <img alt="Logo" src="/logo.png" className="h-10 w-auto" />
             <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-gray-700 transition">
-              <XMarkIcon className="h-6 w-6" />
+              <XMarkIcon className="h-6 w-6 shrink-0" />
             </button>
           </div>
           <nav className="flex-1">
             <ul role="list" className="space-y-2 px-2">
-              {navigation.map((item) => (
-                <li key={item.name}>
-                  <a
-                    href={item.href}
-                    onClick={() => setActiveNav(item.name)}
-                    className={classNames(
-                      activeNav === item.name
-                        ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                        : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                      'group flex gap-x-4 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
-                    )}
-                  >
-                    <item.icon aria-hidden="true" className="h-6 w-6" />
-                    {item.name}
-                  </a>
-                </li>
-              ))}
+              {navigation.map((item) => {
+                const isParentActive = item.children && item.children.some((c) => activeNav === c.name)
+                const isOpen = openMenus[item.name.toLowerCase()] || false
+
+                if (item.children) {
+                  return (
+                    <li key={item.name}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenMenus((prev) => ({
+                            ...prev,
+                            [item.name.toLowerCase()]: !prev[item.name.toLowerCase()],
+                          }))
+                        }}
+                        className={classNames(
+                          isParentActive
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
+                          'w-full text-left group flex items-center gap-x-3 rounded-lg p-3 text-lg font-semibold transition-all duration-200'
+                        )}
+                      >
+                        <item.icon className="h-6 w-6 shrink-0" />
+                        <span className="flex-1">{item.name}</span>
+                        <svg
+                          className={classNames(
+                            'h-4 w-4 shrink-0 text-gray-400',
+                            isOpen ? 'rotate-90' : 'rotate-0',
+                            'transform transition-transform duration-200'
+                          )}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      {isOpen && (
+                        <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
+                          {item.children.map((subitem) => {
+                            const isSubActive = activeNav === subitem.name
+                            return (
+                              <li key={subitem.name}>
+                                <a
+                                  href={subitem.href}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    setActiveNav(subitem.name)
+                                    router.push(subitem.href)
+                                    setSidebarOpen(false)
+                                  }}
+                                  className={classNames(
+                                    isSubActive
+                                      ? 'bg-blue-100 text-blue-700 font-semibold'
+                                      : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
+                                    'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
+                                  )}
+                                >
+                                  {subitem.name}
+                                </a>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                }
+
+                return (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        if (item.name === 'Logout') {
+                          // Handle logout
+                        } else {
+                          setActiveNav(item.name)
+                          router.push(item.href)
+                          setSidebarOpen(false)
+                        }
+                      }}
+                      className={classNames(
+                        activeNav === item.name
+                          ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
+                        'group flex gap-x-3 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
+                      )}
+                    >
+                      <item.icon aria-hidden="true" className="h-6 w-6 shrink-0" />
+                      {item.name}
+                    </a>
+                  </li>
+                )
+              })}
             </ul>
           </nav>
         </div>
@@ -296,23 +386,101 @@ export default function OrdersPage() {
           </div>
           <nav className="flex-1">
             <ul role="list" className="space-y-2">
-              {navigation.map((item) => (
-                <li key={item.name}>
-                  <a
-                    href={item.href}
-                    onClick={() => setActiveNav(item.name)}
-                    className={classNames(
-                      activeNav === item.name
-                        ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                        : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                      'group flex gap-x-4 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
-                    )}
-                  >
-                    <item.icon aria-hidden="true" className="h-6 w-6" />
-                    {item.name}
-                  </a>
-                </li>
-              ))}
+              {navigation.map((item) => {
+                const isParentActive = item.children && item.children.some((c) => activeNav === c.name)
+                const isOpen = openMenus[item.name.toLowerCase()] || false
+
+                if (item.children) {
+                  return (
+                    <li key={item.name}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenMenus((prev) => ({
+                            ...prev,
+                            [item.name.toLowerCase()]: !prev[item.name.toLowerCase()],
+                          }))
+                        }}
+                        className={classNames(
+                          isParentActive
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
+                          'group flex items-center gap-x-3 rounded-md p-3 text-lg font-semibold w-full text-left transition-colors duration-200'
+                        )}
+                      >
+                        <item.icon className="h-6 w-6 shrink-0" />
+                        <span className="flex-1">{item.name}</span>
+                        <svg
+                          className={classNames(
+                            'h-4 w-4 shrink-0 text-gray-400',
+                            isOpen ? 'rotate-90' : 'rotate-0',
+                            'transform transition-transform duration-200'
+                          )}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      {isOpen && (
+                        <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
+                          {item.children.map((subitem) => {
+                            const isSubActive = activeNav === subitem.name
+                            return (
+                              <li key={subitem.name}>
+                                <a
+                                  href={subitem.href}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    setActiveNav(subitem.name)
+                                    router.push(subitem.href)
+                                  }}
+                                  className={classNames(
+                                    isSubActive
+                                      ? 'bg-blue-100 text-blue-700 font-semibold'
+                                      : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
+                                    'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
+                                  )}
+                                >
+                                  {subitem.name}
+                                </a>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                }
+
+                return (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        if (item.name === 'Logout') {
+                          // Handle logout
+                        } else {
+                          setActiveNav(item.name)
+                          router.push(item.href)
+                        }
+                      }}
+                      className={classNames(
+                        activeNav === item.name
+                          ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
+                        'group flex gap-x-3 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
+                      )}
+                    >
+                      <item.icon aria-hidden="true" className="h-6 w-6 shrink-0" />
+                      {item.name}
+                    </a>
+                  </li>
+                )
+              })}
             </ul>
           </nav>
         </div>
@@ -327,7 +495,7 @@ export default function OrdersPage() {
             className="text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-2"
             aria-label="Open menu"
           >
-            <Bars3Icon className="h-6 w-6" />
+            <Bars3Icon className="h-6 w-6 shrink-0" />
           </button>
           <img alt="Logo" src="/logo.png" className="h-10 w-auto" />
           <div className="w-10" /> {/* Spacer for centering */}
@@ -389,126 +557,195 @@ export default function OrdersPage() {
               </div>
             ) : (
               <div className="space-y-2 sm:space-y-3">
-                {filteredOrders.map((order, idx) => {
-                  const productDetailsList = extractProductDetails(order.products || order.product)
-                  const isExpanded = expandedOrders.has(order.id)
-                  const hasMultipleItems = productDetailsList.length > 1
-                  const totalPrice = productDetailsList.length > 0
-                    ? productDetailsList.reduce((sum, item) => sum + Number(item.price || 0), 0)
-                    : (order.price || 0)
-                  const totalQuantity = productDetailsList.length > 0
-                    ? productDetailsList.reduce((sum, item) => sum + Number(item.quantity || 1), 0)
-                    : 0
+                    {filteredOrders.map((order, idx) => {
+                    const productDetailsList = extractProductDetails(order.products || order.product)
+                    const isExpanded = expandedOrders.has(order.id)
+                    const hasMultipleItems = productDetailsList.length > 1
+                    const totalPrice = productDetailsList.length > 0
+                      ? productDetailsList.reduce((sum, item) => sum + Number(item.price || 0), 0)
+                      : (order.price || 0)
+                    const shippingCost = order.shippingDetails?.shippingCost || 0
+                    const totalWithShipping = totalPrice + Number(shippingCost)
+                    const totalQuantity = productDetailsList.length > 0
+                      ? productDetailsList.reduce((sum, item) => sum + Number(item.quantity || 1), 0)
+                      : 0
 
-                  const orderStatus = order.status || 'Pending'
-                  const isPending = orderStatus === 'Pending'
+                      const orderStatus = order.status || 'Pending'
+                      const isPending = orderStatus === 'Pending'
                   const orderDate = order.timestamp?.toDate
                     ? order.timestamp.toDate().toLocaleDateString()
                     : order.date || '—'
+                  
+                  // Get shipping/pickup info
+                  const requestShipping = order.requestShipping
+                  const isShipping = requestShipping === true || requestShipping === 'true' || requestShipping === 'shipping'
+                  const deliveryType = isShipping ? 'Shipping' : 'Pickup'
+                  const address = isShipping ? (order.address || '—') : '—'
+                  const phone = order.phone || order.phoneNumber || '—'
 
-                  return (
+                      return (
                     <div key={order.id}>
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-1">
-                              <div>
-                                <div className="text-sm sm:text-base font-semibold text-gray-900 mb-0.5">{order.name}</div>
-                                <div className="text-xs sm:text-sm text-gray-500">{orderDate}</div>
-                              </div>
-                              <div className="sm:ml-4">
-                                <select
-                                  value={orderStatus}
-                                  onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                                  className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium border-2 transition cursor-pointer ${
-                                    isPending
-                                      ? 'bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100'
-                                      : 'bg-green-50 border-green-300 text-green-700 hover:bg-green-100'
-                                  }`}
+                      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-5 shadow-sm">
+                        {/* Header Section */}
+                        <div className="flex items-start justify-between mb-4 pb-3 border-b border-gray-200">
+                          <div>
+                            <div className="text-base sm:text-lg font-bold text-gray-900 mb-1">{order.name}</div>
+                            <div className="text-xs sm:text-sm text-gray-500">{orderDate}</div>
+                          </div>
+                          <select
+                            value={orderStatus}
+                            onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                            className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border-2 transition cursor-pointer ${
+                              isPending
+                                ? 'bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100'
+                                : 'bg-green-50 border-green-300 text-green-700 hover:bg-green-100'
+                            }`}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Shipped">Shipped</option>
+                          </select>
+                        </div>
+
+                        {/* Details Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
+                          <div>
+                            <div className="text-xs text-gray-500 mb-1">ID</div>
+                            <div className="text-xs sm:text-sm text-gray-900 font-mono break-all">{order.id}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500 mb-1">Phone</div>
+                            <div className="text-xs sm:text-sm text-gray-900">{phone}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500 mb-1">Delivery</div>
+                            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${
+                              isShipping 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-purple-100 text-purple-800'
+                            }`}>
+                              {deliveryType}
+                            </span>
+                          </div>
+                          {isShipping && address !== '—' && (
+                            <div className="sm:col-span-2">
+                              <div className="text-xs text-gray-500 mb-1">Address</div>
+                              <div className="text-xs sm:text-sm text-gray-900">{address}</div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Items Section */}
+                        <div className="mb-4 pb-4 border-b border-gray-200">
+                          {hasMultipleItems ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div className="text-xs text-gray-500">Items</div>
+                                <button
+                                  onClick={() => toggleOrderExpansion(order.id)}
+                                  className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-semibold underline"
                                 >
-                                  <option value="Pending">Pending</option>
-                                  <option value="Shipped">Shipped</option>
-                                </select>
+                                  {isExpanded ? 'Hide' : 'Show'} {productDetailsList.length} items
+                                </button>
+                              </div>
+                              <div className="text-xs sm:text-sm text-gray-900">
+                                <span className="text-gray-500">Total Quantity: </span>
+                                <span className="font-semibold">{totalQuantity}</span>
                               </div>
                             </div>
-                            <div className="mt-2 space-y-1">
-                              {hasMultipleItems ? (
-                                <>
-                                  <div className="text-xs sm:text-sm">
-                                    <span className="text-gray-500">Items: </span>
-                                    <button
-                                      onClick={() => toggleOrderExpansion(order.id)}
-                                      className="text-blue-600 hover:text-blue-800 underline font-medium"
-                                    >
-                                      {isExpanded ? 'Hide' : 'Show'} {productDetailsList.length} items
-                                    </button>
-                                  </div>
-                                  <div className="text-xs sm:text-sm">
-                                    <span className="text-gray-500">Total Quantity: </span>
-                                    <span className="text-gray-700">{totalQuantity}</span>
-                                  </div>
-                                </>
-                              ) : (
-                                <div className="text-xs sm:text-sm">
-                                  <span className="text-gray-500">Product: </span>
-                                  <span className="text-gray-700">{productDetailsList[0]?.category || productDetailsList[0]?.name || '—'}</span>
+                          ) : (
+                            <div className="space-y-1">
+                              <div className="text-xs text-gray-500">Product</div>
+                              <div className="text-xs sm:text-sm text-gray-900 font-medium">
+                                {productDetailsList[0]?.category || productDetailsList[0]?.name || '—'}
+                              </div>
+                              {(productDetailsList[0]?.quantity || productDetailsList[0]?.sizeType) && (
+                                <div className="flex gap-3 text-xs text-gray-600 mt-1">
                                   {productDetailsList[0]?.quantity && (
-                                    <>
-                                      <span className="text-gray-500 ml-2">Quantity: </span>
-                                      <span className="text-gray-700">{productDetailsList[0].quantity}</span>
-                                    </>
+                                    <span>Qty: <span className="font-medium">{productDetailsList[0].quantity}</span></span>
                                   )}
                                   {productDetailsList[0]?.sizeType && (
-                                    <>
-                                      <span className="text-gray-500 ml-2">Type: </span>
-                                      <span className="text-gray-700">{productDetailsList[0].sizeType}</span>
-                                    </>
+                                    <span>Type: <span className="font-medium">{productDetailsList[0].sizeType}</span></span>
                                   )}
                                 </div>
                               )}
-                              <div className="text-xs sm:text-sm">
-                                <span className="text-gray-500">Price: </span>
-                                <span className="text-gray-700 font-semibold">
-                                  {formatAmount(hasMultipleItems ? totalPrice : (productDetailsList[0]?.price ?? order.price ?? 0))}
-                                </span>
-                              </div>
                             </div>
+                          )}
+                        </div>
+
+                        {/* Pricing Section */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center text-xs sm:text-sm">
+                            <span className="text-gray-500">Subtotal</span>
+                            <span className="text-gray-900 font-semibold">
+                              {formatAmount(hasMultipleItems ? totalPrice : (productDetailsList[0]?.price ?? order.price ?? 0))}
+                            </span>
+                          </div>
+                          {isShipping && shippingCost > 0 && (
+                            <div className="flex justify-between items-center text-xs sm:text-sm">
+                              <span className="text-gray-500">Shipping</span>
+                              <span className="text-gray-900 font-semibold">{formatAmount(shippingCost)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                            <span className="text-sm sm:text-base font-semibold text-gray-900">Total</span>
+                            <span className="text-base sm:text-lg font-bold text-gray-900">
+                              {formatAmount(isShipping ? totalWithShipping : totalPrice)}
+                            </span>
                           </div>
                         </div>
                       </div>
                       
-                      {/* Expanded items for multiple products */}
+                      {/* Expanded items for multiple products - Improved design */}
                       {hasMultipleItems && isExpanded && (
-                        <div className="mt-2 ml-4 space-y-2">
-                          {productDetailsList.map((item, itemIdx) => (
-                            <div
-                              key={`${order.id}-item-${itemIdx}`}
-                              className="bg-blue-50 border-l-4 border-blue-400 rounded-lg p-2 sm:p-3"
-                            >
-                              <div className="text-xs sm:text-sm space-y-1">
-                                <div>
-                                  <span className="text-gray-500">Product: </span>
-                                  <span className="text-gray-700 font-medium">• {item.name || item.category}</span>
-                                </div>
-                                {item.quantity && (
-                                  <div>
-                                    <span className="text-gray-500">Quantity: </span>
-                                    <span className="text-gray-700">{item.quantity}</span>
+                        <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-4 sm:p-5">
+                          <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-300">
+                            Order Items ({productDetailsList.length})
+                          </div>
+                          <div className="space-y-2.5">
+                            {productDetailsList.map((item, itemIdx) => (
+                              <div
+                                key={`${order.id}-item-${itemIdx}`}
+                                className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1">
+                                    <div className="text-xs sm:text-sm font-semibold text-gray-900 mb-2">
+                                      {itemIdx + 1}. {item.name || item.category || 'Product'}
+                                    </div>
+                                    <div className="flex gap-4 text-xs text-gray-600">
+                                      {item.quantity && (
+                                        <span>Qty: <span className="font-medium text-gray-900">{item.quantity}</span></span>
+                                      )}
+                                      {item.sizeType && (
+                                        <span>Type: <span className="font-medium text-gray-900">{item.sizeType}</span></span>
+                                      )}
+                                    </div>
                                   </div>
-                                )}
-                                {item.sizeType && (
-                                  <div>
-                                    <span className="text-gray-500">Type: </span>
-                                    <span className="text-gray-700">{item.sizeType}</span>
+                                  <div className="text-sm sm:text-base font-bold text-blue-700">
+                                    {formatAmount(item.price || 0)}
                                   </div>
-                                )}
-                                <div>
-                                  <span className="text-gray-500">Price: </span>
-                                  <span className="text-gray-700 font-semibold">{formatAmount(item.price || 0)}</span>
                                 </div>
                               </div>
+                            ))}
+                          </div>
+                          <div className="mt-4 pt-3 border-t border-gray-300">
+                            <div className="flex justify-between items-center text-xs sm:text-sm mb-1.5">
+                              <span className="text-gray-600">Subtotal</span>
+                              <span className="text-gray-900 font-semibold">{formatAmount(totalPrice)}</span>
                             </div>
-                          ))}
+                            {isShipping && shippingCost > 0 && (
+                              <div className="flex justify-between items-center text-xs sm:text-sm mb-1.5">
+                                <span className="text-gray-600">Shipping</span>
+                                <span className="text-gray-900 font-semibold">{formatAmount(shippingCost)}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between items-center pt-2 border-t border-gray-300">
+                              <span className="text-sm sm:text-base font-bold text-gray-900">Total</span>
+                              <span className="text-base sm:text-lg font-bold text-blue-700">
+                                {formatAmount(isShipping ? totalWithShipping : totalPrice)}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -538,7 +775,7 @@ export default function OrdersPage() {
                 onClick={handleCloseModal}
                 className="text-gray-400 hover:text-gray-700 transition p-1 rounded-lg hover:bg-gray-200"
               >
-                <XMarkIcon className="h-6 w-6" />
+                <XMarkIcon className="h-6 w-6 shrink-0" />
               </button>
             </div>
 

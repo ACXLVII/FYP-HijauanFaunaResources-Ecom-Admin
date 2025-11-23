@@ -16,7 +16,14 @@ import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestor
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Products', href: '/products', icon: ShoppingBagIcon },
+  {
+    name: 'Products',
+    icon: ShoppingBagIcon,
+    children: [
+      { name: 'Live Grass', href: '/products/livegrass' },
+      { name: 'Artificial Grass', href: '/products/artificialgrass' },
+    ],
+  },
   { name: 'Customers', href: '/customers', icon: UsersIcon },
   { name: 'Orders', href: '/orders', icon: FolderIcon },
   { name: 'Review and Inquiry', href: '/review', icon: StarIcon },
@@ -72,12 +79,15 @@ function calculateTotalPrice(products, orderPrice) {
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeNav, setActiveNav] = useState('Dashboard')
+  const [openMenus, setOpenMenus] = useState({ products: false })
   const [orders, setOrders] = useState([])
   const [recentOrders, setRecentOrders] = useState([])
-  const [stats, setStats] = useState([
-    { name: 'Total Order', stat: '0' },
-    { name: 'Total Income', stat: 'RM 0.00' },
-  ])
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    totalIncome: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+  })
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const router = useRouter()
 
@@ -93,7 +103,15 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    if (orders.length === 0) return
+    if (orders.length === 0) {
+      setStats({
+        totalOrders: 0,
+        totalIncome: 0,
+        pendingOrders: 0,
+        completedOrders: 0,
+      })
+      return
+    }
 
     // Calculate stats
     const totalOrders = orders.length
@@ -103,10 +121,22 @@ export default function DashboardPage() {
       return sum + price
     }, 0)
 
-    setStats([
-      { name: 'Total Order', stat: totalOrders.toString() },
-      { name: 'Total Income', stat: `RM ${totalIncome.toFixed(2)}` },
-    ])
+    const pendingOrders = orders.filter(order => {
+      const status = order.status || 'Pending'
+      return status === 'Pending' || status === 'pending'
+    }).length
+
+    const completedOrders = orders.filter(order => {
+      const status = order.status || ''
+      return status === 'Shipped' || status === 'shipped' || status === 'Completed' || status === 'completed'
+    }).length
+
+    setStats({
+      totalOrders,
+      totalIncome,
+      pendingOrders,
+      completedOrders,
+    })
 
     // Get recent orders (sorted by timestamp, limit to 5)
     const sortedOrders = [...orders]
@@ -147,13 +177,22 @@ export default function DashboardPage() {
     e.preventDefault()
     if (item.name === 'Logout') {
       setShowLogoutConfirm(true)
-    } else if (item.name === 'Products') {
-      router.push('/products/livegrass')
-      setActiveNav('') 
+    } else if (item.children) {
+      // Toggle dropdown for Products
+      setOpenMenus((prev) => ({
+        ...prev,
+        [item.name.toLowerCase()]: !prev[item.name.toLowerCase()],
+      }))
     } else {
       setActiveNav(item.name)
       router.push(item.href)
     }
+  }
+
+  const handleSubNavClick = (subitem, e) => {
+    e.preventDefault()
+    setActiveNav(subitem.name)
+    router.push(subitem.href)
   }
 
   const confirmLogout = () => {
@@ -161,9 +200,7 @@ export default function DashboardPage() {
     router.push('/logout')
   }
 
-  // Products menu never gets highlighted
   const isActiveNav = (name) => {
-    if (name === 'Products') return false
     return activeNav === name
   }
 
@@ -184,38 +221,95 @@ export default function DashboardPage() {
           </div>
           <nav className="flex-1">
             <ul role="list" className="space-y-2 px-2">
-              {navigation.map((item) => (
-                <li key={item.name}>
-                  <a
-                    href={item.href}
-                    onClick={(e) => {
-                      handleNavigationClick(item, e)
-                      setSidebarOpen(false)
-                    }}
-                    className={classNames(
-                      isActiveNav(item.name)
-                        ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                        : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                      'group flex gap-x-4 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
-                    )}
-                  >
-                    <item.icon className="h-6 w-6" />
-                    {item.name}
-                    {/* Always show arrow icon for Products */}
-                    {item.name === 'Products' && (
-                      <svg
-                        className="ml-auto h-5 w-5 shrink-0 text-gray-400"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
+              {navigation.map((item) => {
+                const isParentActive = item.children && item.children.some((c) => activeNav === c.name)
+                const isOpen = openMenus[item.name.toLowerCase()] || false
+
+                if (item.children) {
+                  return (
+                    <li key={item.name}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenMenus((prev) => ({
+                            ...prev,
+                            [item.name.toLowerCase()]: !prev[item.name.toLowerCase()],
+                          }))
+                        }}
+                        className={classNames(
+                          isParentActive
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
+                          'group flex items-center gap-x-3 rounded-lg p-3 text-lg font-semibold w-full text-left transition-all duration-200'
+                        )}
                       >
-                        <path d="M6 6L14 10L6 14V6Z" />
-                      </svg>
-                    )}
-                  </a>
-                </li>
-              ))}
+                        <item.icon className="h-6 w-6 shrink-0" />
+                        <span className="flex-1">{item.name}</span>
+                        <svg
+                          className={classNames(
+                            'h-4 w-4 shrink-0 text-gray-400',
+                            isOpen ? 'rotate-90' : 'rotate-0',
+                            'transform transition-transform duration-200'
+                          )}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      {isOpen && (
+                        <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
+                          {item.children.map((subitem) => {
+                            const isSubActive = activeNav === subitem.name
+                            return (
+                              <li key={subitem.name}>
+                                <a
+                                  href={subitem.href}
+                                  onClick={(e) => {
+                                    handleSubNavClick(subitem, e)
+                                    setSidebarOpen(false)
+                                  }}
+                                  className={classNames(
+                                    isSubActive
+                                      ? 'bg-blue-100 text-blue-700 font-semibold'
+                                      : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
+                                    'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
+                                  )}
+                                >
+                                  {subitem.name}
+                                </a>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                }
+
+                return (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      onClick={(e) => {
+                        handleNavigationClick(item, e)
+                        setSidebarOpen(false)
+                      }}
+                      className={classNames(
+                        isActiveNav(item.name)
+                          ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
+                        'group flex items-center gap-x-3 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
+                      )}
+                    >
+                      <item.icon className="h-6 w-6 shrink-0" />
+                      {item.name}
+                    </a>
+                  </li>
+                )
+              })}
             </ul>
           </nav>
         </div>
@@ -229,35 +323,89 @@ export default function DashboardPage() {
           </div>
           <nav className="flex-1">
             <ul role="list" className="space-y-2">
-              {navigation.map((item) => (
-                <li key={item.name}>
-                  <a
-                    href={item.href}
-                    onClick={(e) => handleNavigationClick(item, e)}
-                    className={classNames(
-                      isActiveNav(item.name)
-                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
-                      'group flex items-center gap-x-3 rounded-lg p-3 text-base font-semibold transition-all duration-200'
-                    )}
-                  >
-                    <item.icon className="h-5 w-5 shrink-0" />
-                    <span className="flex-1">{item.name}</span>
-                    {/* Always show arrow icon for Products */}
-                    {item.name === 'Products' && (
-                      <svg
-                        className="h-4 w-4 shrink-0 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
+              {navigation.map((item) => {
+                const isParentActive = item.children && item.children.some((c) => activeNav === c.name)
+                const isOpen = openMenus[item.name.toLowerCase()] || false
+
+                if (item.children) {
+                  return (
+                    <li key={item.name}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenMenus((prev) => ({
+                            ...prev,
+                            [item.name.toLowerCase()]: !prev[item.name.toLowerCase()],
+                          }))
+                        }}
+                        className={classNames(
+                          isParentActive
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
+                          'group flex items-center gap-x-3 rounded-lg p-3 text-lg font-semibold w-full text-left transition-all duration-200'
+                        )}
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                      </svg>
-                    )}
-                  </a>
-                </li>
-              ))}
+                        <item.icon className="h-6 w-6 shrink-0" />
+                        <span className="flex-1">{item.name}</span>
+                        <svg
+                          className={classNames(
+                            'h-4 w-4 shrink-0 text-gray-400',
+                            isOpen ? 'rotate-90' : 'rotate-0',
+                            'transform transition-transform duration-200'
+                          )}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      {isOpen && (
+                        <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
+                          {item.children.map((subitem) => {
+                            const isSubActive = activeNav === subitem.name
+                            return (
+                              <li key={subitem.name}>
+                                <a
+                                  href={subitem.href}
+                                  onClick={(e) => handleSubNavClick(subitem, e)}
+                                  className={classNames(
+                                    isSubActive
+                                      ? 'bg-blue-100 text-blue-700 font-semibold'
+                                      : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
+                                    'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
+                                  )}
+                                >
+                                  {subitem.name}
+                                </a>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                }
+
+                return (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      onClick={(e) => handleNavigationClick(item, e)}
+                      className={classNames(
+                        isActiveNav(item.name)
+                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
+                        'group flex items-center gap-x-3 rounded-lg p-3 text-lg font-semibold transition-all duration-200'
+                      )}
+                    >
+                      <item.icon className="h-6 w-6 shrink-0" />
+                      <span className="flex-1">{item.name}</span>
+                    </a>
+                  </li>
+                )
+              })}
             </ul>
           </nav>
         </div>
@@ -279,58 +427,87 @@ export default function DashboardPage() {
         </div>
         
         <main className="p-4 sm:p-6 lg:p-8 flex-1 overflow-auto bg-gray-50">
-          <h3 className="text-xl sm:text-2xl font-bold text-black mb-6">Dashboard</h3>
+          <div className="mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+          </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            {stats.map((item) => (
-              <div
-                key={item.name}
-                className="bg-white rounded-lg px-6 py-5 shadow border border-gray-200"
-              >
-                <div className="text-sm font-medium text-gray-500 mb-2">{item.name}</div>
-                <div className="text-3xl font-semibold text-gray-900">
-                  {item.stat}
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="bg-white rounded-lg px-6 py-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="text-sm font-medium text-gray-500 mb-2">Total Orders</div>
+              <div className="text-3xl font-bold text-gray-900">
+                {stats.totalOrders}
               </div>
-            ))}
+            </div>
+            
+            <div className="bg-white rounded-lg px-6 py-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="text-sm font-medium text-gray-500 mb-2">Total Income</div>
+              <div className="text-3xl font-bold text-gray-900">
+                RM {stats.totalIncome.toFixed(2)}
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg px-6 py-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="text-sm font-medium text-gray-500 mb-2">Pending Orders</div>
+              <div className="text-3xl font-bold text-yellow-600">
+                {stats.pendingOrders}
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg px-6 py-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="text-sm font-medium text-gray-500 mb-2">Completed Orders</div>
+              <div className="text-3xl font-bold text-green-600">
+                {stats.completedOrders}
+              </div>
+            </div>
           </div>
 
           {/* Recent Orders */}
-          <section className="bg-white rounded-lg shadow p-4 sm:p-6 border border-gray-200">
-            <h2 className="text-lg font-semibold mb-3 sm:mb-4 text-gray-900">Recent Orders</h2>
+          <section className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Recent Orders</h2>
+              <a
+                href="/orders"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All →
+              </a>
+            </div>
             
             {recentOrders.length === 0 ? (
-              <div className="px-4 py-8 text-center text-gray-500">
-                No orders found yet.
+              <div className="px-4 py-12 text-center">
+                <div className="text-gray-400 mb-2">
+                  <FolderIcon className="h-12 w-12 mx-auto" />
+                </div>
+                <p className="text-gray-500 font-medium">No orders found yet</p>
+                <p className="text-sm text-gray-400 mt-1">Orders will appear here once customers place them</p>
               </div>
             ) : (
-              <div className="space-y-2 sm:space-y-3">
-                {/* Each order is a compact card matching the image design */}
-                {recentOrders.map((order, idx) => (
+              <div className="space-y-3">
+                {recentOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4"
+                    className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition-colors"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-1">
-                          <div>
-                            <div className="text-sm sm:text-base font-semibold text-gray-900 mb-0.5">{order.name}</div>
-                            <div className="text-xs sm:text-sm text-gray-500">{order.date}</div>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-base font-semibold text-gray-900 truncate">{order.name}</div>
+                            <div className="text-sm text-gray-500 mt-0.5">{order.date}</div>
                           </div>
-                          <div className="sm:ml-4">
+                          <div className="ml-3 shrink-0">
                             <span className={statusBadge(order.status)}>{order.status}</span>
                           </div>
                         </div>
-                        <div className="mt-2 space-y-1">
-                          <div className="text-xs sm:text-sm">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                          <div>
                             <span className="text-gray-500">Product: </span>
-                            <span className="text-gray-700">{order.product}</span>
+                            <span className="text-gray-700 font-medium">{order.product}</span>
                           </div>
-                          <div className="text-xs sm:text-sm">
+                          <div>
                             <span className="text-gray-500">Price: </span>
-                            <span className="text-gray-700">{order.price}</span>
+                            <span className="text-gray-700 font-semibold">{order.price}</span>
                           </div>
                         </div>
                       </div>

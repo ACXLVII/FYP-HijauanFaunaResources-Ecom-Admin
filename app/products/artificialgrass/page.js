@@ -93,31 +93,31 @@ function Sidebar({ currentRoute, onLogout }) {
                         }))
                       }
                       className={classNames(
-                        isParentActive
-                          ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                          : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                        'group flex gap-x-4 rounded-md p-3 text-lg font-semibold w-full text-left transition-colors duration-200'
+                          isParentActive
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
+                        'group flex items-center gap-x-3 rounded-lg p-3 text-lg font-semibold w-full text-left transition-all duration-200'
                       )}
                     >
-                      <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
-                      {item.name}
+                      <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                      <span className="flex-1">{item.name}</span>
                       <svg
                         className={classNames(
-                          'ml-auto h-5 w-5 shrink-0',
+                          'h-4 w-4 shrink-0 text-gray-400',
                           isOpen ? 'rotate-90' : 'rotate-0',
                           'transform transition-transform duration-200'
                         )}
-                        viewBox="0 0 20 20"
                         fill="none"
+                        viewBox="0 0 24 24"
                         stroke="currentColor"
                         strokeWidth={2}
                       >
-                        <path d="M6 6L14 10L6 14V6Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
 
                     {isOpen && (
-                      <ul className="mt-1 ml-8 space-y-1">
+                      <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
                         {item.children.map((subitem) => {
                           const isSubActive = activeNav === subitem.name
                           return (
@@ -131,9 +131,9 @@ function Sidebar({ currentRoute, onLogout }) {
                                 }}
                                 className={classNames(
                                   isSubActive
-                                    ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                                    : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                                  'block rounded-md p-2 text-base font-medium'
+                                    ? 'bg-blue-100 text-blue-700 font-semibold'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
+                                  'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
                                 )}
                               >
                                 {subitem.name}
@@ -201,7 +201,6 @@ export default function ArtificialGrassPage() {
     inStock: true,
     name: '',
     priceGroup: [],
-    link: '',
   })
 
   useEffect(() => {
@@ -215,7 +214,6 @@ export default function ArtificialGrassPage() {
           features: data.features || [],
           images: data.images || [],
           inStock: data.inStock === 'TRUE',
-          link: data.link || '',
           name: data.name || '',
           priceGroup: data.priceGroup || [],
         }
@@ -236,7 +234,6 @@ export default function ArtificialGrassPage() {
       inStock: true,
       name: '',
       priceGroup: [],
-      link: '',
     })
   }
 
@@ -258,7 +255,6 @@ export default function ArtificialGrassPage() {
           .slice(0, 3)
           .map((img) => (typeof img === 'string' ? { src: img } : img)),
         inStock: newProduct.inStock ? 'TRUE' : 'FALSE',
-        link: newProduct.link.trim(),
         name: newProduct.name.trim(),
         priceGroup: newProduct.priceGroup,
       }
@@ -285,7 +281,6 @@ export default function ArtificialGrassPage() {
       features: prod.features || [],
       images: prod.images.length > 0 ? prod.images : [{ src: '' }],
       inStock: prod.inStock ?? true,
-      link: prod.link || '',
       name: prod.name || '',
       priceGroup: prod.priceGroup || [],
     })
@@ -380,10 +375,10 @@ export default function ArtificialGrassPage() {
                           isParentActive
                             ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
                             : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
-                          'group flex items-center gap-x-3 rounded-lg p-3 text-base font-semibold w-full text-left transition-all duration-200'
+                          'group flex items-center gap-x-3 rounded-lg p-3 text-lg font-semibold w-full text-left transition-all duration-200'
                         )}
                       >
-                        <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                        <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
                         <span className="flex-1">{item.name}</span>
                         <svg
                           className={classNames(
@@ -487,7 +482,7 @@ export default function ArtificialGrassPage() {
         >
           Add Product
         </button>
-        <div className="space-y-2 sm:space-y-3">
+        <div className="space-y-4 sm:space-y-5">
           {products.map((prod) => {
             const isExpanded = expandedProductId === prod.id
             const mainImage = prod.images && prod.images.length > 0
@@ -495,128 +490,167 @@ export default function ArtificialGrassPage() {
                 ? prod.images[0]
                 : prod.images[0]?.src
               : ''
+            const minPrice = prod.priceGroup?.length > 0
+              ? Math.min(...prod.priceGroup.map(p => Number(p.price) || 0))
+              : 0
             return (
               <div
                 key={prod.id}
-                className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4"
+                className="bg-white border border-gray-200 rounded-lg p-4 sm:p-5 shadow-sm"
               >
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                {/* Header Section */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-4 pb-4 border-b border-gray-200">
                   {mainImage && (
                     <img
                       src={mainImage}
                       alt={prod.name || 'Product Image'}
-                      className="w-full sm:w-32 h-32 object-cover rounded-lg"
+                      className="w-full sm:w-40 h-40 object-cover rounded-lg"
                     />
                   )}
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <div className="text-sm sm:text-base font-semibold text-gray-900 mb-0.5">{prod.name}</div>
+                        <div className="text-base sm:text-lg font-bold text-gray-900 mb-1">{prod.name}</div>
                         {prod.category && (
                           <div className="text-xs sm:text-sm text-gray-500">Category: {prod.category}</div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        {prod.inStock === false ? (
-                          <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Out of Stock</span>
-                        ) : (
-                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">In Stock</span>
-                        )}
-                      </div>
+                      {prod.inStock === false ? (
+                        <span className="px-3 py-1.5 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Out of Stock</span>
+                      ) : (
+                        <span className="px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-xs font-semibold">In Stock</span>
+                      )}
                     </div>
                     {prod.description && (
-                      <div className="text-xs sm:text-sm text-gray-700 mb-2">{prod.description}</div>
+                      <div className="text-xs sm:text-sm text-gray-700 mb-3 leading-relaxed">{prod.description}</div>
                     )}
                     {prod.priceGroup?.length > 0 && (
-                      <div className="text-xs sm:text-sm mb-2">
+                      <div className="mt-3 space-y-2">
+                        <div className="text-xs text-gray-500 font-semibold mb-2">Pricing</div>
+                        <div className="flex flex-wrap gap-3">
+                          {prod.priceGroup.map((p, i) => {
+                            const sizeTypeLower = (p.sizeType || '').toLowerCase()
+                            const isRoll = sizeTypeLower === 'roll' || sizeTypeLower === 'rolls'
+                            const isSqft = sizeTypeLower === 'sqft' || sizeTypeLower === 'sq ft' || sizeTypeLower === 'square feet' || sizeTypeLower === 'sq.ft' || sizeTypeLower === 'sq. ft' || sizeTypeLower === 'square inch' || sizeTypeLower === 'square inches' || sizeTypeLower === 'sq inch' || sizeTypeLower === 'sq inches'
+                            
+                            let bgColor = 'bg-green-50'
+                            let borderColor = 'border-green-200'
+                            let textColor = 'text-green-700'
+                            let label = 'Sqft'
+                            
+                            if (isRoll) {
+                              bgColor = 'bg-blue-50'
+                              borderColor = 'border-blue-200'
+                              textColor = 'text-blue-700'
+                              label = 'Roll'
+                            } else if (isSqft) {
+                              bgColor = 'bg-green-50'
+                              borderColor = 'border-green-200'
+                              textColor = 'text-green-700'
+                              label = 'Sqft'
+                            }
+                            
+                            return (
+                              <div key={i} className={`${bgColor} border ${borderColor} rounded-lg px-3 py-2`}>
+                                <div className="text-xs text-gray-600">{label}</div>
+                                <div className={`text-sm font-bold ${textColor}`}>
+                                  {p.measurement ? `${p.measurement} - ` : ''}RM {Number(p.price || 0).toFixed(2)}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {!prod.priceGroup?.length && minPrice > 0 && (
+                      <div className="text-sm sm:text-base mt-3">
                         <span className="text-gray-500">Starting from: </span>
-                        <span className="text-gray-700 font-semibold">
-                          RM {Math.min(...prod.priceGroup.map(p => Number(p.price) || 0)).toFixed(2)}
+                        <span className="text-gray-900 font-bold text-lg">
+                          RM {minPrice.toFixed(2)}
                         </span>
                       </div>
                     )}
-                    {prod.link && (
-                      <div className="text-xs sm:text-sm mb-2">
-                        <span className="text-gray-500">Link: </span>
-                        <a
-                          href={prod.link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-blue-600 underline"
-                        >
-                          View Link
-                        </a>
-                      </div>
-                    )}
-                    <button
-                      className="text-blue-600 text-xs sm:text-sm underline mb-2"
-                      onClick={() =>
-                        setExpandedProductId(isExpanded ? null : prod.id)
-                      }
-                    >
-                      {isExpanded ? 'Hide Details' : 'View Details'}
-                    </button>
-                    {isExpanded && (
-                      <div className="text-xs sm:text-sm text-gray-700 space-y-3 mt-3 pt-3 border-t border-gray-200">
-                        {prod.priceGroup?.length > 0 && (
-                          <div>
-                            <p className="font-semibold text-gray-900 mb-1">Price Details:</p>
-                            <div className="space-y-1">
-                              {prod.priceGroup.map((p, i) => (
-                                <div key={i} className="bg-white p-2 rounded">
-                                  <span className="text-gray-700">
-                                    {p.measurement} - RM {p.price} {p.sizeType && `(${p.sizeType})`}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {prod.features?.length > 0 && (
-                          <div>
-                            <p className="font-semibold text-gray-900 mb-1">Features:</p>
-                            <div className="space-y-1">
-                              {prod.features.map((f, i) => (
-                                <div key={i} className="bg-white p-2 rounded">
-                                  <span className="font-medium text-gray-900">{f.title}:</span>{' '}
-                                  <span className="text-gray-600">{f.description}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {prod.images?.length > 1 && (
-                          <div>
-                            <p className="font-semibold text-gray-900 mb-1">Additional Images:</p>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                              {prod.images.slice(1).map((img, idx) => (
-                                <img
-                                  key={idx}
-                                  src={typeof img === 'string' ? img : img.src}
-                                  alt={`Image ${idx + 1}`}
-                                  className="h-20 w-full object-cover rounded"
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
-                      <button
-                        onClick={() => handleEditProduct(prod.id)}
-                        className="flex-1 bg-green-500 text-white px-3 py-1.5 rounded hover:bg-green-600 text-xs sm:text-sm font-medium"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => confirmDelete(prod.id)}
-                        className="flex-1 bg-red-500 text-white px-3 py-1.5 rounded hover:bg-red-600 text-xs sm:text-sm font-medium"
-                      >
-                        Delete
-                      </button>
-                    </div>
                   </div>
+                </div>
+
+                {/* Details Section */}
+                <div className="mb-4">
+                  <button
+                    className="text-sm sm:text-base text-blue-600 hover:text-blue-800 font-semibold underline"
+                    onClick={() => setExpandedProductId(isExpanded ? null : prod.id)}
+                  >
+                    {isExpanded ? 'Hide Details' : 'View Details'}
+                  </button>
+                </div>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
+                    {prod.priceGroup?.length > 0 && (
+                      <div>
+                        <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Price Details</div>
+                        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                          {prod.priceGroup.map((p, i) => (
+                            <div key={i} className="bg-white border border-gray-200 rounded-lg p-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <span className="text-sm font-medium text-gray-900">{p.measurement}</span>
+                                  {p.sizeType && (
+                                    <span className="text-xs text-gray-500 ml-2">({p.sizeType})</span>
+                                  )}
+                                </div>
+                                <span className="text-sm font-bold text-blue-700">RM {Number(p.price || 0).toFixed(2)}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {prod.features?.length > 0 && (
+                      <div>
+                        <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Features</div>
+                        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                          {prod.features.map((f, i) => (
+                            <div key={i} className="bg-white border border-gray-200 rounded-lg p-3">
+                              <div className="text-sm font-semibold text-gray-900 mb-1">{f.title}</div>
+                              <div className="text-xs sm:text-sm text-gray-600">{f.description}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {prod.images?.length > 1 && (
+                      <div>
+                        <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Additional Images</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {prod.images.slice(1).map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={typeof img === 'string' ? img : img.src}
+                              alt={`Image ${idx + 1}`}
+                              className="h-32 w-full object-cover rounded-lg border border-gray-200"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => handleEditProduct(prod.id)}
+                    className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm font-semibold transition"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => confirmDelete(prod.id)}
+                    className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 text-sm font-semibold transition"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             )
@@ -650,13 +684,6 @@ export default function ArtificialGrassPage() {
                 onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
                 className="border p-2 rounded w-full text-gray-900"
                 rows={3}
-              />
-              <input
-                type="text"
-                placeholder="Link"
-                value={newProduct.link}
-                onChange={(e) => setNewProduct({ ...newProduct, link: e.target.value })}
-                className="border p-2 rounded w-full text-gray-900"
               />
 
               {/* Images Editor */}

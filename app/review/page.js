@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   HomeIcon,
   UsersIcon,
@@ -17,7 +18,14 @@ import { collection, onSnapshot } from 'firebase/firestore'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Products', href: '/products', icon: ShoppingBagIcon },
+  {
+    name: 'Products',
+    icon: ShoppingBagIcon,
+    children: [
+      { name: 'Live Grass', href: '/products/livegrass' },
+      { name: 'Artificial Grass', href: '/products/artificialgrass' },
+    ],
+  },
   { name: 'Customers', href: '/customers', icon: UsersIcon },
   { name: 'Orders', href: '/orders', icon: FolderIcon },
   { name: 'Review and Inquiry', href: '/review', icon: StarIcon },
@@ -89,7 +97,9 @@ function formatDate(dateField, timestampField) {
 }
 
 export default function ReviewAndInquiryPage() {
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [openMenus, setOpenMenus] = useState({ products: false })
   const [reviews, setReviews] = useState([])
   const [inquiries, setInquiries] = useState([])
   const [activeNav, setActiveNav] = useState('Review and Inquiry')
@@ -170,31 +180,108 @@ export default function ReviewAndInquiryPage() {
               onClick={() => setSidebarOpen(false)}
               className="text-gray-400 ml-auto hover:text-gray-700 transition"
             >
-              <XMarkIcon className="h-6 w-6" />
+              <XMarkIcon className="h-6 w-6 shrink-0" />
             </button>
           </div>
           <nav className="flex-1">
             <ul role="list" className="space-y-2 px-2">
-              {navigation.map((item) => (
-                <li key={item.name}>
-                  <a
-                    href={item.href}
-                    onClick={() => {
-                      setActiveNav(item.name)
-                      setSidebarOpen(false)
-                    }}
-                    className={classNames(
-                      activeNav === item.name
-                        ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                        : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                      'group flex gap-x-4 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
-                    )}
-                  >
-                    <item.icon className="h-6 w-6" aria-hidden="true" />
-                    {item.name}
-                  </a>
-                </li>
-              ))}
+              {navigation.map((item) => {
+                const isParentActive = item.children && item.children.some((c) => activeNav === c.name)
+                const isOpen = openMenus[item.name.toLowerCase()] || false
+
+                if (item.children) {
+                  return (
+                    <li key={item.name}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenMenus((prev) => ({
+                            ...prev,
+                            [item.name.toLowerCase()]: !prev[item.name.toLowerCase()],
+                          }))
+                        }}
+                        className={classNames(
+                          isParentActive
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
+                          'w-full text-left group flex items-center gap-x-3 rounded-lg p-3 text-lg font-semibold transition-all duration-200'
+                        )}
+                      >
+                        <item.icon className="h-6 w-6 shrink-0" />
+                        <span className="flex-1">{item.name}</span>
+                        <svg
+                          className={classNames(
+                            'h-4 w-4 shrink-0 text-gray-400',
+                            isOpen ? 'rotate-90' : 'rotate-0',
+                            'transform transition-transform duration-200'
+                          )}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      {isOpen && (
+                        <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
+                          {item.children.map((subitem) => {
+                            const isSubActive = activeNav === subitem.name
+                            return (
+                              <li key={subitem.name}>
+                                <a
+                                  href={subitem.href}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    setActiveNav(subitem.name)
+                                    router.push(subitem.href)
+                                    setSidebarOpen(false)
+                                  }}
+                                  className={classNames(
+                                    isSubActive
+                                      ? 'bg-blue-100 text-blue-700 font-semibold'
+                                      : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
+                                    'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
+                                  )}
+                                >
+                                  {subitem.name}
+                                </a>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                }
+
+                return (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        if (item.name === 'Logout') {
+                          // Handle logout
+                        } else {
+                          setActiveNav(item.name)
+                          router.push(item.href)
+                          setSidebarOpen(false)
+                        }
+                      }}
+                      className={classNames(
+                        activeNav === item.name
+                          ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
+                        'group flex gap-x-3 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
+                      )}
+                    >
+                      <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                      {item.name}
+                    </a>
+                  </li>
+                )
+              })}
             </ul>
           </nav>
         </div>
@@ -208,23 +295,101 @@ export default function ReviewAndInquiryPage() {
           </div>
           <nav className="flex-1">
             <ul role="list" className="space-y-2">
-              {navigation.map((item) => (
-                <li key={item.name}>
-                  <a
-                    href={item.href}
-                    onClick={() => setActiveNav(item.name)}
-                    className={classNames(
-                      activeNav === item.name
-                        ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                        : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                      'group flex gap-x-4 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
-                    )}
-                  >
-                    <item.icon className="h-6 w-6" aria-hidden="true" />
-                    {item.name}
-                  </a>
-                </li>
-              ))}
+              {navigation.map((item) => {
+                const isParentActive = item.children && item.children.some((c) => activeNav === c.name)
+                const isOpen = openMenus[item.name.toLowerCase()] || false
+
+                if (item.children) {
+                  return (
+                    <li key={item.name}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenMenus((prev) => ({
+                            ...prev,
+                            [item.name.toLowerCase()]: !prev[item.name.toLowerCase()],
+                          }))
+                        }}
+                        className={classNames(
+                          isParentActive
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
+                          'group flex items-center gap-x-3 rounded-md p-3 text-lg font-semibold w-full text-left transition-colors duration-200'
+                        )}
+                      >
+                        <item.icon className="h-6 w-6 shrink-0" />
+                        <span className="flex-1">{item.name}</span>
+                        <svg
+                          className={classNames(
+                            'h-4 w-4 shrink-0 text-gray-400',
+                            isOpen ? 'rotate-90' : 'rotate-0',
+                            'transform transition-transform duration-200'
+                          )}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      {isOpen && (
+                        <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
+                          {item.children.map((subitem) => {
+                            const isSubActive = activeNav === subitem.name
+                            return (
+                              <li key={subitem.name}>
+                                <a
+                                  href={subitem.href}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    setActiveNav(subitem.name)
+                                    router.push(subitem.href)
+                                  }}
+                                  className={classNames(
+                                    isSubActive
+                                      ? 'bg-blue-100 text-blue-700 font-semibold'
+                                      : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
+                                    'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
+                                  )}
+                                >
+                                  {subitem.name}
+                                </a>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                }
+
+                return (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        if (item.name === 'Logout') {
+                          // Handle logout
+                        } else {
+                          setActiveNav(item.name)
+                          router.push(item.href)
+                        }
+                      }}
+                      className={classNames(
+                        activeNav === item.name
+                          ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
+                          : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
+                        'group flex gap-x-3 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
+                      )}
+                    >
+                      <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                      {item.name}
+                    </a>
+                  </li>
+                )
+              })}
             </ul>
           </nav>
         </div>
@@ -239,7 +404,7 @@ export default function ReviewAndInquiryPage() {
             className="text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-2"
             aria-label="Open menu"
           >
-            <Bars3Icon className="h-6 w-6" />
+            <Bars3Icon className="h-6 w-6 shrink-0" />
           </button>
           <img alt="Logo" src="/logo.png" className="h-10 w-auto" />
           <div className="w-10" /> {/* Spacer for centering */}
@@ -359,43 +524,43 @@ export default function ReviewAndInquiryPage() {
                 /* Reviews Cards */
                 filteredReviews.length === 0 ? (
                   <div className="px-4 py-12 text-center text-gray-500">
-                    {searchQuery || selectedRating
-                      ? 'No reviews match your filters.'
-                      : 'No reviews found yet.'}
+                            {searchQuery || selectedRating
+                              ? 'No reviews match your filters.'
+                              : 'No reviews found yet.'}
                   </div>
-                ) : (
+                      ) : (
                   <div className="space-y-2 sm:space-y-3">
                     {filteredReviews.map((review, idx) => {
-                      const rating = review.rating || review.stars || review.starRating || 0
-                      const customerName =
-                        review.customerName ||
-                        review.name ||
-                        review.customer ||
-                        'Anonymous'
-                      const comment = review.description || '—'
-                      const date = formatDate(review.date, review.timestamp)
-                      
-                      // Extract images - handle multiple formats
-                      let images = []
-                      if (review.images && Array.isArray(review.images)) {
-                        images = review.images
-                      } else if (review.image) {
-                        images = Array.isArray(review.image) ? review.image : [review.image]
-                      } else if (review.photos && Array.isArray(review.photos)) {
-                        images = review.photos
-                      } else if (review.photo) {
-                        images = Array.isArray(review.photo) ? review.photo : [review.photo]
-                      }
-                      // Handle if images are objects with url/src property
-                      images = images.map(img => {
-                        if (typeof img === 'string') return img
-                        if (img && typeof img === 'object') return img.url || img.src || img.image || ''
-                        return ''
-                      }).filter(img => img && img.trim() !== '')
+                          const rating = review.rating || review.stars || review.starRating || 0
+                          const customerName =
+                            review.customerName ||
+                            review.name ||
+                            review.customer ||
+                            'Anonymous'
+                          const comment = review.description || '—'
+                          const date = formatDate(review.date, review.timestamp)
+                          
+                          // Extract images - handle multiple formats
+                          let images = []
+                          if (review.images && Array.isArray(review.images)) {
+                            images = review.images
+                          } else if (review.image) {
+                            images = Array.isArray(review.image) ? review.image : [review.image]
+                          } else if (review.photos && Array.isArray(review.photos)) {
+                            images = review.photos
+                          } else if (review.photo) {
+                            images = Array.isArray(review.photo) ? review.photo : [review.photo]
+                          }
+                          // Handle if images are objects with url/src property
+                          images = images.map(img => {
+                            if (typeof img === 'string') return img
+                            if (img && typeof img === 'object') return img.url || img.src || img.image || ''
+                            return ''
+                          }).filter(img => img && img.trim() !== '')
 
-                      return (
+                          return (
                         <div
-                          key={review.id}
+                              key={review.id}
                           className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
@@ -406,7 +571,7 @@ export default function ReviewAndInquiryPage() {
                                   <div className="text-xs sm:text-sm text-gray-500">{date}</div>
                                 </div>
                                 <div className="sm:ml-4">
-                                  <StarRating rating={Number(rating)} />
+                                <StarRating rating={Number(rating)} />
                                 </div>
                               </div>
                               <div className="mt-2 space-y-1">
@@ -418,25 +583,25 @@ export default function ReviewAndInquiryPage() {
                                   <div className="text-xs sm:text-sm">
                                     <span className="text-gray-500">Images: </span>
                                     <div className="flex gap-2 flex-wrap mt-1">
-                                      {images.slice(0, 3).map((imgUrl, imgIdx) => (
-                                        <img
-                                          key={imgIdx}
-                                          src={imgUrl}
-                                          alt={`Review image ${imgIdx + 1}`}
+                                    {images.slice(0, 3).map((imgUrl, imgIdx) => (
+                                      <img
+                                        key={imgIdx}
+                                        src={imgUrl}
+                                        alt={`Review image ${imgIdx + 1}`}
                                           className="h-12 w-12 sm:h-16 sm:w-16 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition"
-                                          onClick={() => {
-                                            window.open(imgUrl, '_blank')
-                                          }}
-                                          onError={(e) => {
-                                            e.target.style.display = 'none'
-                                          }}
-                                        />
-                                      ))}
-                                      {images.length > 3 && (
+                                        onClick={() => {
+                                          window.open(imgUrl, '_blank')
+                                        }}
+                                        onError={(e) => {
+                                          e.target.style.display = 'none'
+                                        }}
+                                      />
+                                    ))}
+                                    {images.length > 3 && (
                                         <div className="h-12 w-12 sm:h-16 sm:w-16 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200 text-xs font-medium text-gray-600">
-                                          +{images.length - 3}
-                                        </div>
-                                      )}
+                                        +{images.length - 3}
+                                      </div>
+                                    )}
                                     </div>
                                   </div>
                                 )}
@@ -444,30 +609,30 @@ export default function ReviewAndInquiryPage() {
                             </div>
                           </div>
                         </div>
-                      )
+                          )
                     })}
-                  </div>
+                </div>
                 )
               ) : (
                 /* Inquiries Cards */
                 filteredInquiries.length === 0 ? (
                   <div className="px-4 py-12 text-center text-gray-500">
-                    {searchQuery
-                      ? 'No inquiries match your search.'
-                      : 'No inquiries found yet.'}
+                            {searchQuery
+                              ? 'No inquiries match your search.'
+                              : 'No inquiries found yet.'}
                   </div>
-                ) : (
+                      ) : (
                   <div className="space-y-2 sm:space-y-3">
                     {filteredInquiries.map((inquiry, idx) => {
-                      const name = inquiry.name || inquiry.customerName || inquiry.customer || 'Anonymous'
-                      const email = inquiry.email || '—'
-                      const phone = inquiry.phoneNumber ? String(inquiry.phoneNumber).trim() : '—'
-                      const message = inquiry.message || inquiry.description || inquiry.comment || '—'
-                      const date = formatDate(inquiry.date, inquiry.timestamp)
+                          const name = inquiry.name || inquiry.customerName || inquiry.customer || 'Anonymous'
+                          const email = inquiry.email || '—'
+                          const phone = inquiry.phoneNumber ? String(inquiry.phoneNumber).trim() : '—'
+                          const message = inquiry.message || inquiry.description || inquiry.comment || '—'
+                          const date = formatDate(inquiry.date, inquiry.timestamp)
 
-                      return (
+                          return (
                         <div
-                          key={inquiry.id}
+                              key={inquiry.id}
                           className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
@@ -495,7 +660,7 @@ export default function ReviewAndInquiryPage() {
                         </div>
                       )
                     })}
-                  </div>
+                </div>
                 )
               )}
             </div>

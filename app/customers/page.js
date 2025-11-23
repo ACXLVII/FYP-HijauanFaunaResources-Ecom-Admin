@@ -126,26 +126,27 @@ export default function CustomerPage() {
                           isParentActive
                             ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
                             : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                          'w-full text-left group flex gap-x-4 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
+                          'w-full text-left group flex items-center gap-x-3 rounded-lg p-3 text-lg font-semibold transition-all duration-200'
                         )}
                       >
-                        <item.icon className="h-6 w-6" aria-hidden="true" />
-                        {item.name}
+                        <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                        <span className="flex-1">{item.name}</span>
                         <svg
                           className={classNames(
-                            isOpen ? 'rotate-90 text-blue-500' : 'text-gray-400',
-                            'ml-auto h-5 w-5 shrink-0 transform transition-transform duration-200'
+                            'h-4 w-4 shrink-0 text-gray-400',
+                            isOpen ? 'rotate-90' : 'rotate-0',
+                            'transform transition-transform duration-200'
                           )}
-                          viewBox="0 0 20 20"
                           fill="none"
+                          viewBox="0 0 24 24"
                           stroke="currentColor"
                           strokeWidth={2}
                         >
-                          <path d="M6 6L14 10L6 14V6Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
                       {isOpen && (
-                        <ul className="mt-1 ml-6 space-y-1">
+                        <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
                           {item.children.map(subitem => (
                             <li key={subitem.name}>
                               <a
@@ -158,9 +159,9 @@ export default function CustomerPage() {
                                 }}
                                 className={classNames(
                                   activeNav === subitem.name
-                                    ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                                    : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                                  'block rounded-md p-2 text-base font-medium'
+                                    ? 'bg-blue-100 text-blue-700 font-semibold'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
+                                  'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
                                 )}
                               >
                                 {subitem.name}
@@ -215,10 +216,10 @@ export default function CustomerPage() {
                           isParentActive
                             ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
                             : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
-                          'w-full text-left group flex items-center gap-x-3 rounded-lg p-3 text-base font-semibold transition-all duration-200'
+                          'w-full text-left group flex items-center gap-x-3 rounded-lg p-3 text-lg font-semibold transition-all duration-200'
                         )}
                       >
-                        <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                        <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
                         <span className="flex-1">{item.name}</span>
                         <svg
                           className={classNames(
@@ -269,7 +270,7 @@ export default function CustomerPage() {
                         activeNav === item.name
                           ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
                           : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                        'w-full text-left group flex gap-x-4 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
+                        'w-full text-left group flex items-center gap-x-3 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
                       )}
                     >
                       <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
@@ -310,17 +311,17 @@ export default function CustomerPage() {
 
             {/* Customer Cards */}
             <div className="mt-6 sm:mt-8">
-              {customersList.length === 0 ? (
+                  {customersList.length === 0 ? (
                 <div className="px-4 py-8 text-center text-gray-500">
-                  No customers found yet.
+                        No customers found yet.
                 </div>
-              ) : (
+                  ) : (
                 <div className="space-y-2 sm:space-y-3">
                   {customersList.map((customer, idx) => (
                     <div
-                      key={`${customer.name}-${idx}`}
+                        key={`${customer.name}-${idx}`}
                       className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4"
-                    >
+                      >
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                         <div className="flex-1">
                           <div className="mb-2">
