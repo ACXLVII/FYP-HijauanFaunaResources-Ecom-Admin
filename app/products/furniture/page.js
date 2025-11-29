@@ -46,7 +46,7 @@ const navigation = [
   { name: 'Logout', href: '/logout', icon: XMarkIcon },
 ]
 
-const currentRoute = '/products/livegrass' // Adjust dynamically in your real app if needed
+const currentRoute = '/products/furniture'
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
@@ -55,7 +55,6 @@ function classNames(...classes) {
 function Sidebar({ currentRoute, onLogout }) {
   const router = useRouter()
 
-  // Determine active nav item (parent or child)
   const findActiveNav = () => {
     for (const item of navigation) {
       if (item.href === currentRoute) return item.name
@@ -78,13 +77,11 @@ function Sidebar({ currentRoute, onLogout }) {
   return (
     <div className="hidden lg:flex lg:flex-col lg:w-64 lg:bg-white lg:fixed lg:inset-y-0 lg:z-50 border-r border-gray-200">
       <div className="flex flex-col gap-y-6 overflow-y-auto px-4 py-6 h-full">
-        {/* Logo */}
         <div className="flex items-center gap-3 px-2 mb-2">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
           <span className="text-lg font-semibold text-gray-900">Admin</span>
         </div>
         
-        {/* Navigation */}
         <nav className="flex-1">
           <ul role="list" className="space-y-1">
             {navigation.map((item) => {
@@ -190,7 +187,6 @@ function Sidebar({ currentRoute, onLogout }) {
             })}
           </ul>
         </nav>
-        
       </div>
     </div>
   )
@@ -199,7 +195,7 @@ function Sidebar({ currentRoute, onLogout }) {
 export default function ProductsPage() {
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [activeNav, setActiveNav] = useState('Live Grass')
+  const [activeNav, setActiveNav] = useState('Furniture')
   const [openMenus, setOpenMenus] = useState({ products: true })
 
   const [expandedProductId, setExpandedProductId] = useState(null)
@@ -221,8 +217,7 @@ export default function ProductsPage() {
   })
 
   useEffect(() => {
-    // Listen to LiveGrass collection realtime
-    const unsub = onSnapshot(collection(db, 'LiveGrass'), (snap) => {
+    const unsub = onSnapshot(collection(db, 'OthersFurniture'), (snap) => {
       const list = snap.docs.map((d) => {
         const data = d.data()
         // Preserve Firestore document ID as docId, and keep custom id field if it exists
@@ -262,7 +257,6 @@ export default function ProductsPage() {
         category: newProduct.category,
         description: newProduct.description,
         features: newProduct.features,
-        // Always store images as { src: ... }
         images: newProduct.images
           .slice(0, 3)
           .map((img) => (typeof img === 'string' ? { src: img } : img)),
@@ -277,10 +271,10 @@ export default function ProductsPage() {
           alert('Error: Cannot find document ID for this product')
           return
         }
-        const ref = doc(db, 'LiveGrass', docId)
+        const ref = doc(db, 'OthersFurniture', docId)
         await updateDoc(ref, prodData)
       } else {
-        await addDoc(collection(db, 'LiveGrass'), prodData)
+        await addDoc(collection(db, 'OthersFurniture'), prodData)
       }
       resetModal()
     } catch (error) {
@@ -313,7 +307,7 @@ export default function ProductsPage() {
   const deleteProduct = async () => {
     if (!productToDel) return
     try {
-      await deleteDoc(doc(db, 'LiveGrass', productToDel))
+      await deleteDoc(doc(db, 'OthersFurniture', productToDel))
       setShowDelete(false)
       setProductToDel(null)
     } catch (error) {
@@ -345,7 +339,7 @@ export default function ProductsPage() {
     if (!file) return
     const reader = new FileReader()
     reader.onloadend = () => {
-      updateImage(i, 'src', reader.result) // base64 data URI string
+      updateImage(i, 'src', reader.result)
     }
     reader.readAsDataURL(file)
   }
@@ -357,11 +351,9 @@ export default function ProductsPage() {
 
   return (
     <div className="bg-gray-50 min-h-screen flex">
-      {/* Mobile Sidebar */}
       <div className={`lg:hidden fixed inset-0 z-50 bg-gray-900 bg-opacity-75 ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="flex flex-col w-64 bg-white h-full shadow-lg border-r">
           <div className="flex flex-col gap-y-6 overflow-y-auto px-4 py-6">
-            {/* Logo */}
             <div className="flex items-center justify-between px-2 mb-2">
               <div className="flex items-center gap-3">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
@@ -488,11 +480,9 @@ export default function ProductsPage() {
 
       <Sidebar currentRoute={currentRoute} onLogout={() => setShowLogoutConfirm(true)} />
       <div className="flex flex-col lg:pl-64 w-full">
-        {/* Top Header Bar - HR Dashboard Style */}
         <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
           <div className="px-4 lg:px-8 py-4">
             <div className="flex items-center justify-between">
-              {/* Left: Hamburger Menu and Search Bar */}
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setSidebarOpen(true)}
@@ -503,15 +493,13 @@ export default function ProductsPage() {
                 </button>
               </div>
               
-              {/* Center: Title and Date */}
               <div className="flex-1 lg:flex-none lg:text-center">
-                <h1 className="text-2xl font-bold text-gray-900">Live Grass</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Furniture</h1>
                 <p className="text-sm text-gray-500 mt-0.5">
                   {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
               </div>
               
-              {/* Right: Actions */}
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setIsModalOpen(true)}
@@ -531,7 +519,6 @@ export default function ProductsPage() {
         </header>
         
         <main className="p-4 lg:p-8 flex-1 overflow-auto bg-gray-50">
-          {/* Mobile: Add Button */}
           <div className="lg:hidden mb-4">
             <button
               onClick={() => setIsModalOpen(true)}
@@ -541,7 +528,6 @@ export default function ProductsPage() {
             </button>
           </div>
         
-        {/* Products - Mobile: Stacked cards, Desktop: Grid */}
         <div className="space-y-3 lg:space-y-4">
           {products.map((prod) => {
             const isExpanded = expandedProductId === prod.id
@@ -550,15 +536,11 @@ export default function ProductsPage() {
                 ? prod.images[0]
                 : prod.images[0]?.src
               : ''
-            const minPrice = prod.priceGroup?.length > 0
-              ? Math.min(...prod.priceGroup.map(p => Number(p.price) || 0))
-              : 0
             return (
               <div
                 key={prod.id}
                 className="bg-white border border-gray-200 rounded-xl lg:rounded-lg p-3 lg:p-5 shadow-sm"
               >
-                {/* Mobile: Vertical layout */}
                 <div className="lg:hidden">
                   {mainImage && (
                     <img
@@ -611,7 +593,6 @@ export default function ProductsPage() {
                   </button>
                 </div>
                 
-                {/* Desktop: Horizontal layout */}
                 <div className="hidden lg:block">
                   <div className="flex gap-4 mb-4 pb-4 border-b border-gray-200">
                     {mainImage && (
@@ -679,7 +660,6 @@ export default function ProductsPage() {
                     </div>
                   </div>
                   
-                  {/* Details Section - Desktop only */}
                   <div className="mb-4">
                     <button
                       className="text-sm text-blue-600 hover:text-blue-800 font-semibold underline"
@@ -690,9 +670,6 @@ export default function ProductsPage() {
                   </div>
                 </div>
 
-                {/* Expanded Details - Shared for both mobile and desktop */}
-
-                {/* Expanded Details */}
                 {isExpanded && (
                   <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
                     {prod.priceGroup?.length > 0 && (
@@ -746,7 +723,6 @@ export default function ProductsPage() {
                   </div>
                 )}
 
-                {/* Action Buttons */}
                 <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
                   <button
                     onClick={() => handleEditProduct(prod.id)}
@@ -766,15 +742,14 @@ export default function ProductsPage() {
           })}
         </div>
 
-        {/* Add/Edit Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-auto p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                 <h3 className="text-xl font-semibold text-gray-900">
-                  {editingProd ? 'Edit Product' : 'Add Product'}
-                </h3>
+                {editingProd ? 'Edit Product' : 'Add Product'}
+              </h3>
                 <button
                   onClick={resetModal}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -792,33 +767,33 @@ export default function ProductsPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Product Name</label>
-                      <input
-                        type="text"
+              <input
+                type="text"
                         placeholder="Enter product name"
-                        value={newProduct.name}
-                        onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                value={newProduct.name}
+                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400"
-                      />
+              />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
-                      <input
-                        type="text"
+              <input
+                type="text"
                         placeholder="Enter category"
-                        value={newProduct.category}
-                        onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                value={newProduct.category}
+                onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400"
-                      />
+              />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
-                      <textarea
+              <textarea
                         placeholder="Enter product description"
-                        value={newProduct.description}
-                        onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                value={newProduct.description}
+                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400 resize-none"
                         rows={4}
-                      />
+              />
                     </div>
                   </div>
                 </div>
@@ -839,26 +814,26 @@ export default function ProductsPage() {
                     )}
                   </div>
                   <div className="space-y-3">
-                    {newProduct.images.map((img, i) => (
+                {newProduct.images.map((img, i) => (
                       <div key={i} className="flex gap-3 items-start p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="flex-1 space-y-2">
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1.5">Image URL or Base64</label>
-                            <input
-                              type="text"
+                    <input
+                      type="text"
                               placeholder="Enter image URL or paste Base64"
-                              value={img.src || ''}
-                              onChange={(e) => updateImage(i, 'src', e.target.value)}
+                      value={img.src || ''}
+                      onChange={(e) => updateImage(i, 'src', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm text-gray-900 placeholder-gray-400"
-                            />
+                    />
                           </div>
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1.5">Upload File</label>
                             <div className="relative">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleImageUpload(e, i)}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, i)}
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 id={`file-upload-${i}`}
                               />
@@ -871,18 +846,18 @@ export default function ProductsPage() {
                             </div>
                           </div>
                         </div>
-                        <button
-                          onClick={() => {
-                            const filtered = newProduct.images.filter((_, idx) => idx !== i)
-                            setNewProduct((prev) => ({ ...prev, images: filtered }))
-                          }}
+                    <button
+                      onClick={() => {
+                        const filtered = newProduct.images.filter((_, idx) => idx !== i)
+                        setNewProduct((prev) => ({ ...prev, images: filtered }))
+                      }}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-6"
                           aria-label="Remove image"
-                        >
+                    >
                           <XMarkIcon className="h-5 w-5" />
-                        </button>
-                      </div>
-                    ))}
+                    </button>
+                  </div>
+                ))}
                     {newProduct.images.length === 0 && (
                       <p className="text-sm text-gray-500 text-center py-4">No images added yet</p>
                     )}
@@ -893,52 +868,52 @@ export default function ProductsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Features</h4>
-                    <button
-                      onClick={() =>
+                  <button
+                    onClick={() =>
                         setNewProduct({ ...newProduct, features: [...(newProduct.features || []), { title: '', description: '' }] })
-                      }
+                    }
                       className="text-sm text-gray-900 hover:text-gray-700 font-medium"
-                    >
+                  >
                       + Add Feature
-                    </button>
-                  </div>
+                  </button>
+              </div>
                   <div className="space-y-3">
-                    {newProduct.features.map((f, i) => (
+                {newProduct.features.map((f, i) => (
                       <div key={i} className="flex gap-3 items-start p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="flex-1 space-y-2">
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1.5">Feature Title</label>
-                            <input
-                              type="text"
+                    <input
+                      type="text"
                               placeholder="e.g., Low Maintenance"
-                              value={f.title || ''}
-                              onChange={(e) => updateFeature(i, 'title', e.target.value)}
+                      value={f.title || ''}
+                      onChange={(e) => updateFeature(i, 'title', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm text-gray-900 placeholder-gray-400"
-                            />
+                    />
                           </div>
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1.5">Feature Description</label>
-                            <input
-                              type="text"
+                    <input
+                      type="text"
                               placeholder="e.g., Grows well with minimal mowing"
-                              value={f.description || ''}
-                              onChange={(e) => updateFeature(i, 'description', e.target.value)}
+                      value={f.description || ''}
+                      onChange={(e) => updateFeature(i, 'description', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm text-gray-900 placeholder-gray-400"
-                            />
+                    />
                           </div>
                         </div>
-                        <button
-                          onClick={() => {
-                            const filtered = newProduct.features.filter((_, idx) => idx !== i)
-                            setNewProduct((prev) => ({ ...prev, features: filtered }))
-                          }}
+                    <button
+                      onClick={() => {
+                        const filtered = newProduct.features.filter((_, idx) => idx !== i)
+                        setNewProduct((prev) => ({ ...prev, features: filtered }))
+                      }}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-6"
                           aria-label="Remove feature"
-                        >
+                    >
                           <XMarkIcon className="h-5 w-5" />
-                        </button>
-                      </div>
-                    ))}
+                    </button>
+                  </div>
+                ))}
                     {newProduct.features.length === 0 && (
                       <p className="text-sm text-gray-500 text-center py-4">No features added yet</p>
                     )}
@@ -949,73 +924,83 @@ export default function ProductsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Price Details</h4>
-                    <button
-                      onClick={() =>
-                        setNewProduct({ ...newProduct, priceGroup: [...(newProduct.priceGroup || []), { measurement: '', price: '' }] })
-                      }
+                <button
+                  onClick={() =>
+                        setNewProduct({ ...newProduct, priceGroup: [...(newProduct.priceGroup || []), { measurement: '', price: '', sizeType: '' }] })
+                  }
                       className="text-sm text-gray-900 hover:text-gray-700 font-medium"
-                    >
+                >
                       + Add Price
-                    </button>
-                  </div>
+                </button>
+              </div>
                   <div className="space-y-3">
-                    {newProduct.priceGroup.map((p, i) => (
+                {newProduct.priceGroup.map((p, i) => (
                       <div key={i} className="flex gap-3 items-start p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="flex-1 grid grid-cols-2 gap-3">
+                        <div className="flex-1 grid grid-cols-3 gap-3">
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1.5">Measurement</label>
-                            <input
-                              type="text"
-                              placeholder="e.g., Roll, Sqft"
-                              value={p.measurement || ''}
-                              onChange={(e) => updatePriceDetail(i, 'measurement', e.target.value)}
+                    <input
+                      type="text"
+                              placeholder="e.g., 1ft x 1ft"
+                      value={p.measurement || ''}
+                      onChange={(e) => updatePriceDetail(i, 'measurement', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm text-gray-900 placeholder-gray-400"
-                            />
+                    />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1.5">Size Type</label>
+                    <input
+                      type="text"
+                              placeholder="e.g., roll, sqft"
+                      value={p.sizeType || ''}
+                      onChange={(e) => updatePriceDetail(i, 'sizeType', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm text-gray-900 placeholder-gray-400"
+                    />
                           </div>
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1.5">Price (RM)</label>
-                            <input
-                              type="number"
+                    <input
+                      type="number"
                               placeholder="e.g., 4.5"
-                              value={p.price || ''}
-                              onChange={(e) => updatePriceDetail(i, 'price', e.target.value)}
+                      value={p.price || ''}
+                      onChange={(e) => updatePriceDetail(i, 'price', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm text-gray-900 placeholder-gray-400"
-                              min="0"
-                              step="0.01"
-                            />
+                      min="0"
+                      step="0.01"
+                    />
                           </div>
                         </div>
-                        <button
-                          onClick={() => {
-                            const filtered = newProduct.priceGroup.filter((_, idx) => idx !== i)
-                            setNewProduct((prev) => ({ ...prev, priceGroup: filtered }))
-                          }}
+                    <button
+                      onClick={() => {
+                        const filtered = newProduct.priceGroup.filter((_, idx) => idx !== i)
+                        setNewProduct((prev) => ({ ...prev, priceGroup: filtered }))
+                      }}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-6"
                           aria-label="Remove price"
-                        >
+                    >
                           <XMarkIcon className="h-5 w-5" />
-                        </button>
-                      </div>
-                    ))}
+                    </button>
+                  </div>
+                ))}
                     {newProduct.priceGroup.length === 0 && (
                       <p className="text-sm text-gray-500 text-center py-4">No price details added yet</p>
                     )}
-                  </div>
+              </div>
                 </div>
 
                 {/* In Stock Checkbox */}
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={newProduct.inStock}
-                    onChange={(e) => setNewProduct({ ...newProduct, inStock: e.target.checked })}
-                    id="inStockCheckbox"
+                <input
+                  type="checkbox"
+                  checked={newProduct.inStock}
+                  onChange={(e) => setNewProduct({ ...newProduct, inStock: e.target.checked })}
+                  id="inStockCheckbox"
                     className="h-4 w-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
-                  />
+                />
                   <label htmlFor="inStockCheckbox" className="text-sm font-medium text-gray-700 cursor-pointer">
                     Product is in stock
-                  </label>
-                </div>
+                </label>
+              </div>
               </div>
 
               {/* Footer */}
@@ -1036,7 +1021,6 @@ export default function ProductsPage() {
             </div>
           </div>
         )}
-        {/* Delete Confirmation Modal */}
         {showDelete && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
             <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-6 text-center">
@@ -1059,7 +1043,6 @@ export default function ProductsPage() {
             </div>
           </div>
         )}
-        {/* Logout Confirmation Modal */}
         {showLogoutConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
             <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
@@ -1087,3 +1070,4 @@ export default function ProductsPage() {
     </div>
   )
 }
+

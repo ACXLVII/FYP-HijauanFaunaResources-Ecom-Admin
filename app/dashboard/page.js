@@ -10,6 +10,11 @@ import {
   XMarkIcon,
   StarIcon,
   Bars3Icon,
+  MagnifyingGlassIcon,
+  BellIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline'
 import { db } from '../firebase'
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore'
@@ -22,11 +27,17 @@ const navigation = [
     children: [
       { name: 'Live Grass', href: '/products/livegrass' },
       { name: 'Artificial Grass', href: '/products/artificialgrass' },
+      { name: 'Product Plants', href: '/products/productplants' },
+      { name: 'Decorative Plants', href: '/products/decorativeplants' },
+      { name: 'Boulders Rocks', href: '/products/bouldersplants' },
+      { name: 'Pebbles Rocks', href: '/products/pebblesrocks' },
+      { name: 'Furniture', href: '/products/furniture' },
+      { name: 'Ornaments', href: '/products/ornaments' },
     ],
   },
   { name: 'Customers', href: '/customers', icon: UsersIcon },
   { name: 'Orders', href: '/orders', icon: FolderIcon },
-  { name: 'Review and Inquiry', href: '/review', icon: StarIcon },
+  { name: 'Reviews and Inquiries', href: '/review', icon: StarIcon },
   { name: 'Logout', href: '/logout', icon: XMarkIcon },
 ]
 
@@ -82,6 +93,9 @@ export default function DashboardPage() {
   const [openMenus, setOpenMenus] = useState({ products: false })
   const [orders, setOrders] = useState([])
   const [recentOrders, setRecentOrders] = useState([])
+  const [inquiries, setInquiries] = useState([])
+  const [productsMap, setProductsMap] = useState({}) // Map of product ID to category
+  const [salesByCategory, setSalesByCategory] = useState([]) // Array of {category, amount, percentage}
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalIncome: 0,
@@ -91,6 +105,121 @@ export default function DashboardPage() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const router = useRouter()
 
+  // Fetch products from all collections to create category mapping
+  useEffect(() => {
+    const unsubs = []
+    const productCategoryMap = {}
+    
+    // Fetch from ArtificialGrass collection
+    const unsub1 = onSnapshot(collection(db, 'ArtificialGrass'), (snap) => {
+      snap.docs.forEach((docSnap) => {
+        const data = docSnap.data()
+        const productId = data.id || docSnap.id
+        if (productId) {
+          productCategoryMap[productId] = 'Artificial Grass'
+        }
+      })
+      setProductsMap((prev) => ({ ...prev, ...productCategoryMap }))
+    })
+    unsubs.push(unsub1)
+    
+    // Fetch from LiveGrass collection
+    const unsub2 = onSnapshot(collection(db, 'LiveGrass'), (snap) => {
+      snap.docs.forEach((docSnap) => {
+        const data = docSnap.data()
+        const productId = data.id || docSnap.id
+        if (productId) {
+          productCategoryMap[productId] = 'Live Grass'
+        }
+      })
+      setProductsMap((prev) => ({ ...prev, ...productCategoryMap }))
+    })
+    unsubs.push(unsub2)
+    
+    // Fetch from ProducePlants collection
+    const unsub3 = onSnapshot(collection(db, 'ProducePlants'), (snap) => {
+      snap.docs.forEach((docSnap) => {
+        const data = docSnap.data()
+        const productId = data.id || docSnap.id
+        if (productId) {
+          productCategoryMap[productId] = 'Product Plants'
+        }
+      })
+      setProductsMap((prev) => ({ ...prev, ...productCategoryMap }))
+    })
+    unsubs.push(unsub3)
+    
+    // Fetch from DecorativePlants collection
+    const unsub4 = onSnapshot(collection(db, 'DecorativePlants'), (snap) => {
+      snap.docs.forEach((docSnap) => {
+        const data = docSnap.data()
+        const productId = data.id || docSnap.id
+        if (productId) {
+          productCategoryMap[productId] = 'Decorative Plants'
+        }
+      })
+      setProductsMap((prev) => ({ ...prev, ...productCategoryMap }))
+    })
+    unsubs.push(unsub4)
+    
+    // Fetch from RocksBoulders collection
+    const unsub5 = onSnapshot(collection(db, 'RocksBoulders'), (snap) => {
+      snap.docs.forEach((docSnap) => {
+        const data = docSnap.data()
+        const productId = data.id || docSnap.id
+        if (productId) {
+          productCategoryMap[productId] = 'Boulders Rocks'
+        }
+      })
+      setProductsMap((prev) => ({ ...prev, ...productCategoryMap }))
+    })
+    unsubs.push(unsub5)
+    
+    // Fetch from RocksPebbles collection
+    const unsub6 = onSnapshot(collection(db, 'RocksPebbles'), (snap) => {
+      snap.docs.forEach((docSnap) => {
+        const data = docSnap.data()
+        const productId = data.id || docSnap.id
+        if (productId) {
+          productCategoryMap[productId] = 'Pebbles Rocks'
+        }
+      })
+      setProductsMap((prev) => ({ ...prev, ...productCategoryMap }))
+    })
+    unsubs.push(unsub6)
+    
+    // Fetch from OthersFurniture collection
+    const unsub7 = onSnapshot(collection(db, 'OthersFurniture'), (snap) => {
+      snap.docs.forEach((docSnap) => {
+        const data = docSnap.data()
+        const productId = data.id || docSnap.id
+        if (productId) {
+          productCategoryMap[productId] = 'Furniture'
+        }
+      })
+      setProductsMap((prev) => ({ ...prev, ...productCategoryMap }))
+    })
+    unsubs.push(unsub7)
+    
+    // Fetch from OthersOrnaments collection
+    const unsub8 = onSnapshot(collection(db, 'OthersOrnaments'), (snap) => {
+      snap.docs.forEach((docSnap) => {
+        const data = docSnap.data()
+        const productId = data.id || docSnap.id
+        if (productId) {
+          productCategoryMap[productId] = 'Ornaments'
+        }
+      })
+      setProductsMap((prev) => ({ ...prev, ...productCategoryMap }))
+    })
+    unsubs.push(unsub8)
+    
+    return () => {
+      unsubs.forEach((unsub) => unsub && unsub())
+    }
+  }, [])
+
+  // Fetch orders from Orders collection
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'Orders'), (snap) => {
       const list = snap.docs.map((docSnap) => ({
@@ -98,6 +227,18 @@ export default function DashboardPage() {
         ...docSnap.data(),
       }))
       setOrders(list)
+    })
+    return unsub
+  }, [])
+
+  // Fetch inquiries from Contact collection
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'Contact'), (snap) => {
+      const list = snap.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }))
+      setInquiries(list)
     })
     return unsub
   }, [])
@@ -173,6 +314,106 @@ export default function DashboardPage() {
     setRecentOrders(sortedOrders)
   }, [orders])
 
+  // Calculate sales by category
+  useEffect(() => {
+    if (orders.length === 0 || Object.keys(productsMap).length === 0) {
+      setSalesByCategory([])
+      return
+    }
+
+    // Category colors mapping - all predefined categories
+    const categoryColors = {
+      'Live Grass': '#f97316', // orange
+      'Artificial Grass': '#3b82f6', // blue
+      'Product Plants': '#eab308', // yellow
+      'Decorative Plants': '#ef4444', // red
+      'Boulders Rocks': '#22c55e', // green
+      'Pebbles Rocks': '#8b5cf6', // purple
+      'Furniture': '#ec4899', // pink
+      'Ornaments': '#06b6d4', // cyan
+      'Other': '#6b7280', // gray
+    }
+
+    // Initialize all categories with 0 sales
+    const categorySales = {}
+    Object.keys(categoryColors).forEach(category => {
+      categorySales[category] = 0
+    })
+    
+    orders.forEach((order) => {
+      const products = order.products || (order.product ? [order.product] : [])
+      const productsArray = Array.isArray(products) ? products : [products]
+      
+      // If we have products array
+      if (productsArray.length > 0 && productsArray[0]) {
+        productsArray.forEach((product) => {
+          let category = 'Other'
+          let price = 0
+          
+          if (typeof product === 'object' && product !== null) {
+            // First try to get category directly from product object
+            if (product.category) {
+              category = product.category
+            } else {
+              // Fallback: try to get category from product ID lookup
+              const productId = product.id || ''
+              if (productId && productsMap[productId]) {
+                category = productsMap[productId]
+              }
+            }
+            
+            // Get price from product
+            price = product.price || product.amount || 0
+            const quantity = product.quantity || product.qty || 1
+            price = Number(price) * Number(quantity)
+            
+            // If price is still 0, calculate from order total divided by items
+            if (price === 0 || isNaN(price)) {
+              const orderPrice = calculateTotalPrice(order.products || order.product, order.price)
+              price = orderPrice / Math.max(productsArray.length, 1)
+            }
+          } else {
+            // Product is not an object, use order price divided by items
+            const orderPrice = calculateTotalPrice(order.products || order.product, order.price)
+            price = orderPrice / Math.max(productsArray.length, 1)
+          }
+          
+          if (!categorySales[category]) {
+            categorySales[category] = 0
+          }
+          categorySales[category] += price
+        })
+      } else {
+        // No products found, categorize as "Other"
+        const orderPrice = calculateTotalPrice(order.products || order.product, order.price)
+        if (!categorySales['Other']) {
+          categorySales['Other'] = 0
+        }
+        categorySales['Other'] += orderPrice
+      }
+    })
+
+    // Calculate total sales
+    const totalSales = Object.values(categorySales).reduce((sum, amount) => sum + amount, 0)
+
+    // Convert to array and calculate percentages
+    const salesArray = Object.entries(categorySales)
+      .map(([category, amount]) => ({
+        category,
+        amount,
+        percentage: totalSales > 0 ? (amount / totalSales) * 100 : 0,
+        color: categoryColors[category] || '#6b7280', // gray as default
+      }))
+      .sort((a, b) => {
+        // Sort by amount descending, but keep "Other" at the end
+        if (a.category === 'Other') return 1
+        if (b.category === 'Other') return -1
+        return b.amount - a.amount
+      })
+
+    setSalesByCategory(salesArray)
+  }, [orders, productsMap])
+
   const handleNavigationClick = (item, e) => {
     e.preventDefault()
     if (item.name === 'Logout') {
@@ -210,24 +451,139 @@ export default function DashboardPage() {
       {/* Mobile Sidebar */}
       <div className={`lg:hidden fixed inset-0 z-50 bg-gray-900 bg-opacity-75 ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="flex flex-col w-64 bg-white h-full shadow-lg border-r">
-          <div className="flex items-center px-4 pt-4 mb-8">
-            <img alt="Logo" src="/logo.png" className="h-14 w-auto" />
+          <div className="flex flex-col gap-y-6 overflow-y-auto px-4 py-6">
+            {/* Logo */}
+            <div className="flex items-center justify-between px-2 mb-2">
+              <div className="flex items-center gap-3">
+                <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
+                <span className="text-lg font-semibold text-gray-900">Admin</span>
+              </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="text-gray-400 ml-auto hover:text-gray-700 transition"
+                className="text-gray-400 hover:text-gray-700 transition"
             >
               <XMarkIcon className="h-6 w-6" />
             </button>
           </div>
+            
           <nav className="flex-1">
-            <ul role="list" className="space-y-2 px-2">
+              <ul role="list" className="space-y-1">
+                {navigation.map((item) => {
+                  const isParentActive = item.children && item.children.some((c) => activeNav === c.name)
+                  const isOpen = openMenus[item.name.toLowerCase()] || false
+                  const isActive = isActiveNav(item.name)
+
+                  if (item.children) {
+                    return (
+                  <li key={item.name}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenMenus((prev) => ({
+                              ...prev,
+                              [item.name.toLowerCase()]: !prev[item.name.toLowerCase()],
+                            }))
+                          }}
+                          className={classNames(
+                            isParentActive
+                              ? 'bg-gray-900 text-white'
+                              : 'text-gray-700 hover:bg-gray-100',
+                            'group flex items-center gap-x-3 rounded-lg px-3 py-2.5 text-sm font-medium w-full text-left transition-all duration-200'
+                          )}
+                        >
+                          <item.icon className="h-5 w-5 shrink-0" />
+                          <span className="flex-1">{item.name}</span>
+                          <svg
+                            className={classNames(
+                              'h-4 w-4 shrink-0',
+                              isParentActive ? 'text-white' : 'text-gray-400',
+                              isOpen ? 'rotate-90' : 'rotate-0',
+                              'transform transition-transform duration-200'
+                            )}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                        {isOpen && (
+                          <ul className="mt-1 ml-8 space-y-1">
+                            {item.children.map((subitem) => {
+                              const isSubActive = activeNav === subitem.name
+                              return (
+                                <li key={subitem.name}>
+                                  <a
+                                    href={subitem.href}
+                                    onClick={(e) => {
+                                      handleSubNavClick(subitem, e)
+                                      setSidebarOpen(false)
+                                    }}
+                                    className={classNames(
+                                      isSubActive
+                                        ? 'text-gray-900 font-semibold'
+                                        : 'text-gray-600 hover:text-gray-900',
+                                      'block px-2 py-1.5 text-sm transition-colors duration-200'
+                                    )}
+                                  >
+                                    {subitem.name}
+                                  </a>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        )}
+                      </li>
+                    )
+                  }
+
+                  return (
+                <li key={item.name}>
+                  <a
+                    href={item.href}
+                    onClick={(e) => {
+                      handleNavigationClick(item, e)
+                      setSidebarOpen(false)
+                    }}
+                    className={classNames(
+                          isActive
+                            ? 'bg-gray-900 text-white'
+                            : 'text-gray-700 hover:bg-gray-100',
+                          'group flex items-center gap-x-3 rounded-lg px-3 py-2.5 text-sm font-medium w-full transition-all duration-200'
+                        )}
+                      >
+                        <item.icon className="h-5 w-5 shrink-0" />
+                        <span className="flex-1">{item.name}</span>
+                  </a>
+                </li>
+                  )
+                })}
+            </ul>
+          </nav>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Sidebar - HR Dashboard Style */}
+      <div className="hidden lg:flex lg:flex-col lg:w-64 lg:bg-white lg:fixed lg:inset-y-0 lg:z-50 border-r border-gray-200">
+        <div className="flex flex-col gap-y-6 overflow-y-auto px-4 py-6">
+          {/* Logo */}
+          <div className="flex items-center gap-3 px-2 mb-2">
+            <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
+            <span className="text-lg font-semibold text-gray-900">Admin</span>
+          </div>
+          
+          <nav className="flex-1">
+            <ul role="list" className="space-y-1">
               {navigation.map((item) => {
                 const isParentActive = item.children && item.children.some((c) => activeNav === c.name)
                 const isOpen = openMenus[item.name.toLowerCase()] || false
+                const isActive = isActiveNav(item.name)
 
                 if (item.children) {
                   return (
-                    <li key={item.name}>
+                <li key={item.name}>
                       <button
                         type="button"
                         onClick={() => {
@@ -236,31 +592,32 @@ export default function DashboardPage() {
                             [item.name.toLowerCase()]: !prev[item.name.toLowerCase()],
                           }))
                         }}
-                        className={classNames(
+                    className={classNames(
                           isParentActive
-                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                            : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                          'group flex items-center gap-x-3 rounded-lg p-3 text-lg font-semibold w-full text-left transition-all duration-200'
+                            ? 'bg-gray-900 text-white'
+                            : 'text-gray-700 hover:bg-gray-100',
+                          'group flex items-center gap-x-3 rounded-lg px-3 py-2.5 text-sm font-medium w-full text-left transition-all duration-200'
                         )}
                       >
-                        <item.icon className="h-6 w-6 shrink-0" />
+                        <item.icon className="h-5 w-5 shrink-0" />
                         <span className="flex-1">{item.name}</span>
                         <svg
                           className={classNames(
-                            'h-4 w-4 shrink-0 text-gray-400',
+                            'h-4 w-4 shrink-0',
+                            isParentActive ? 'text-white' : 'text-gray-400',
                             isOpen ? 'rotate-90' : 'rotate-0',
                             'transform transition-transform duration-200'
                           )}
-                          fill="none"
+                        fill="none"
                           viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
+                      </svg>
                       </button>
                       {isOpen && (
-                        <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
+                        <ul className="mt-1 ml-8 space-y-1">
                           {item.children.map((subitem) => {
                             const isSubActive = activeNav === subitem.name
                             return (
@@ -269,13 +626,12 @@ export default function DashboardPage() {
                                   href={subitem.href}
                                   onClick={(e) => {
                                     handleSubNavClick(subitem, e)
-                                    setSidebarOpen(false)
                                   }}
                                   className={classNames(
                                     isSubActive
-                                      ? 'bg-blue-100 text-blue-700 font-semibold'
-                                      : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
-                                    'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
+                                      ? 'text-gray-900 font-semibold'
+                                      : 'text-gray-600 hover:text-gray-900',
+                                    'block px-2 py-1.5 text-sm transition-colors duration-200'
                                   )}
                                 >
                                   {subitem.name}
@@ -295,115 +651,18 @@ export default function DashboardPage() {
                       href={item.href}
                       onClick={(e) => {
                         handleNavigationClick(item, e)
-                        setSidebarOpen(false)
                       }}
                       className={classNames(
-                        isActiveNav(item.name)
-                          ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600'
-                          : 'text-gray-500 hover:bg-blue-50 hover:text-blue-700',
-                        'group flex items-center gap-x-3 rounded-md p-3 text-lg font-semibold transition-colors duration-200'
+                        isActive
+                          ? 'bg-gray-900 text-white'
+                          : 'text-gray-700 hover:bg-gray-100',
+                        'group flex items-center gap-x-3 rounded-lg px-3 py-2.5 text-sm font-medium w-full transition-all duration-200'
                       )}
                     >
-                      <item.icon className="h-6 w-6 shrink-0" />
-                      {item.name}
-                    </a>
-                  </li>
-                )
-              })}
-            </ul>
-          </nav>
-        </div>
-      </div>
-
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:flex-col lg:w-72 lg:bg-white lg:fixed lg:inset-y-0 lg:z-50 shadow-lg border-r border-gray-200">
-        <div className="flex flex-col gap-y-6 overflow-y-auto px-6 py-6">
-          <div className="flex items-center justify-center mb-8">
-            <img alt="Logo" src="/logo.png" className="h-16 w-auto" />
-          </div>
-          <nav className="flex-1">
-            <ul role="list" className="space-y-2">
-              {navigation.map((item) => {
-                const isParentActive = item.children && item.children.some((c) => activeNav === c.name)
-                const isOpen = openMenus[item.name.toLowerCase()] || false
-
-                if (item.children) {
-                  return (
-                    <li key={item.name}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setOpenMenus((prev) => ({
-                            ...prev,
-                            [item.name.toLowerCase()]: !prev[item.name.toLowerCase()],
-                          }))
-                        }}
-                        className={classNames(
-                          isParentActive
-                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
-                          'group flex items-center gap-x-3 rounded-lg p-3 text-lg font-semibold w-full text-left transition-all duration-200'
-                        )}
-                      >
-                        <item.icon className="h-6 w-6 shrink-0" />
-                        <span className="flex-1">{item.name}</span>
-                        <svg
-                          className={classNames(
-                            'h-4 w-4 shrink-0 text-gray-400',
-                            isOpen ? 'rotate-90' : 'rotate-0',
-                            'transform transition-transform duration-200'
-                          )}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                      {isOpen && (
-                        <ul className="mt-1 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
-                          {item.children.map((subitem) => {
-                            const isSubActive = activeNav === subitem.name
-                            return (
-                              <li key={subitem.name}>
-                                <a
-                                  href={subitem.href}
-                                  onClick={(e) => handleSubNavClick(subitem, e)}
-                                  className={classNames(
-                                    isSubActive
-                                      ? 'bg-blue-100 text-blue-700 font-semibold'
-                                      : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
-                                    'block rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200'
-                                  )}
-                                >
-                                  {subitem.name}
-                                </a>
-                              </li>
-                            )
-                          })}
-                        </ul>
-                      )}
-                    </li>
-                  )
-                }
-
-                return (
-                  <li key={item.name}>
-                    <a
-                      href={item.href}
-                      onClick={(e) => handleNavigationClick(item, e)}
-                      className={classNames(
-                        isActiveNav(item.name)
-                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600',
-                        'group flex items-center gap-x-3 rounded-lg p-3 text-lg font-semibold transition-all duration-200'
-                      )}
-                    >
-                      <item.icon className="h-6 w-6 shrink-0" />
+                      <item.icon className="h-5 w-5 shrink-0" />
                       <span className="flex-1">{item.name}</span>
-                    </a>
-                  </li>
+                  </a>
+                </li>
                 )
               })}
             </ul>
@@ -412,111 +671,264 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col lg:pl-72 w-full">
-        {/* Mobile Header with Menu Button */}
-        <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded p-2"
-            aria-label="Open menu"
-          >
-            <Bars3Icon className="h-6 w-6" />
-          </button>
-          <img alt="Logo" src="/logo.png" className="h-10 w-auto" />
-          <div className="w-10" /> {/* Spacer for centering */}
-        </div>
+      <div className="flex flex-col lg:pl-64 w-full">
+        {/* Top Header Bar - HR Dashboard Style */}
+        <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
+          <div className="px-4 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              {/* Left: Hamburger Menu and Search Bar */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="lg:hidden text-gray-600 hover:text-gray-900 p-2"
+                  aria-label="Open menu"
+                >
+                  <Bars3Icon className="h-6 w-6" />
+                </button>
+              </div>
+              
+              {/* Center: Title and Date */}
+              <div className="flex-1 lg:flex-none lg:text-center">
+                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
+              </div>
+              
+              {/* Right: Actions */}
+              <div className="flex items-center gap-3">
+                <button className="hidden lg:block p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                  <BellIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
         
-        <main className="p-4 sm:p-6 lg:p-8 flex-1 overflow-auto bg-gray-50">
-          <div className="mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+        <main className="p-3 lg:p-4 flex-1 overflow-auto bg-gray-50">
+          {/* Combined Section - Left Column (Total Orders + Status Cards) and Right Column (Sales Chart) */}
+          <div className="flex flex-col lg:flex-row gap-3 mb-3 items-stretch">
+            {/* Left Column - Total Orders and Status Cards */}
+            <div className="max-w-sm">
+              <div className="space-y-3">
+                {/* Total Pending Orders Card */}
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-all relative overflow-hidden">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center shrink-0">
+                      <ClockIcon className="w-5 h-5 text-yellow-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-gray-900 text-2xl font-bold">{stats.pendingOrders}</div>
+                      <div className="text-gray-600 text-sm mt-1">{stats.pendingOrders === 1 ? 'order is' : 'orders are'} still pending</div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Orders Card */}
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 relative overflow-hidden">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center shrink-0">
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xl font-bold text-gray-900 mb-0.5">{stats.totalOrders} orders</div>
+                      <div className="text-sm text-gray-600">{stats.pendingOrders} orders are awaiting confirmation.</div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Customers Card */}
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 relative overflow-hidden">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                      <UsersIcon className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xl font-bold text-gray-900 mb-0.5">
+                        {inquiries.length} {inquiries.length === 1 ? 'customer' : 'customers'}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {(() => {
+                          const pendingCount = inquiries.filter(inq => (inq.status || 'Pending') === 'Pending').length
+                          return `${pendingCount} ${pendingCount === 1 ? 'customer is' : 'customers are'} waiting for response.`
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Right Column - Sales by Category Donut Chart */}
+            <div className="bg-white rounded-xl p-3 sm:p-4 lg:p-5 shadow-sm border border-gray-200 flex flex-col flex-1">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <div>
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900">Sales by Category</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">This month vs last</p>
+                </div>
+              </div>
+              {/* Chart and Legend - Responsive Layout */}
+              {salesByCategory.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <p className="text-sm text-gray-500">No sales data available</p>
+                </div>
+              ) : (
+                <div className="flex flex-col lg:flex-row items-center lg:items-center gap-4 lg:gap-6">
+                  {/* Simple Donut Chart */}
+                  <div className="flex items-center justify-center shrink-0">
+                    <div className="relative w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48">
+                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                        {/* Background circle */}
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" strokeWidth="8" />
+                        {/* Dynamic segments */}
+                        {(() => {
+                          const circumference = 2 * Math.PI * 40 // r=40
+                          let cumulativeOffset = 0
+                          return salesByCategory.map((item, index) => {
+                            const dashLength = (item.percentage / 100) * circumference
+                            const dashArray = `${dashLength} ${circumference}`
+                            const offset = cumulativeOffset
+                            cumulativeOffset += dashLength
+                            return (
+                              <circle
+                                key={index}
+                                cx="50"
+                                cy="50"
+                                r="40"
+                                fill="none"
+                                stroke={item.color}
+                                strokeWidth="8"
+                                strokeDasharray={dashArray}
+                                strokeDashoffset={`-${offset}`}
+                              />
+                            )
+                          })
+                        })()}
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
+                            {salesByCategory.reduce((sum, item) => sum + item.percentage, 0).toFixed(0)}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Legend - Responsive Grid */}
+                  <div className="flex-1 w-full lg:w-auto grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-x-4 sm:gap-y-1.5">
+                    {salesByCategory.map((item, index) => (
+                      <div
+                        key={index}
+                        className={`flex items-center gap-2 text-xs ${index >= 4 ? 'sm:col-span-2 lg:col-span-1' : ''}`}
+                      >
+                        <div
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: item.color }}
+                        ></div>
+                        <span className="text-gray-700">
+                          {item.category} - {item.percentage.toFixed(1)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-lg px-6 py-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="text-sm font-medium text-gray-500 mb-2">Total Orders</div>
-              <div className="text-3xl font-bold text-gray-900">
-                {stats.totalOrders}
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg px-6 py-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="text-sm font-medium text-gray-500 mb-2">Total Income</div>
-              <div className="text-3xl font-bold text-gray-900">
-                RM {stats.totalIncome.toFixed(2)}
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg px-6 py-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="text-sm font-medium text-gray-500 mb-2">Pending Orders</div>
-              <div className="text-3xl font-bold text-yellow-600">
-                {stats.pendingOrders}
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg px-6 py-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="text-sm font-medium text-gray-500 mb-2">Completed Orders</div>
-              <div className="text-3xl font-bold text-green-600">
-                {stats.completedOrders}
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Orders */}
-          <section className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          {/* Recent Orders Section */}
+          <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mt-3">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Recent Orders</h2>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Recent Orders</h2>
+              </div>
               <a
                 href="/orders"
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
+              >
+                View All
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+              <a
+                href="/orders"
+                className="lg:hidden text-xs text-gray-900 hover:text-gray-700 font-medium"
               >
                 View All →
               </a>
             </div>
             
             {recentOrders.length === 0 ? (
-              <div className="px-4 py-12 text-center">
-                <div className="text-gray-400 mb-2">
-                  <FolderIcon className="h-12 w-12 mx-auto" />
+              <div className="px-4 py-10 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full mb-3">
+                  <FolderIcon className="h-6 w-6 text-gray-400" />
                 </div>
-                <p className="text-gray-500 font-medium">No orders found yet</p>
-                <p className="text-sm text-gray-400 mt-1">Orders will appear here once customers place them</p>
+                <p className="text-sm font-semibold text-gray-700 mb-1">No orders yet</p>
+                <p className="text-xs text-gray-500">Orders will appear here when customers place them</p>
               </div>
             ) : (
               <div className="space-y-3">
+                {/* Column Headers - Desktop Only */}
+                <div className="hidden lg:grid lg:grid-cols-12 lg:gap-3 lg:items-center pb-2 border-b border-gray-200">
+                  <div className="col-span-4">
+                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Name</span>
+                  </div>
+                  <div className="col-span-5 text-center">
+                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Amount</span>
+                  </div>
+                  <div className="col-span-3">
+                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Status</span>
+                  </div>
+                </div>
+                
                 {recentOrders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                  <a
+                        key={order.id}
+                    href="/orders"
+                    className="group block bg-white rounded-lg p-4 border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all duration-200"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-base font-semibold text-gray-900 truncate">{order.name}</div>
-                            <div className="text-sm text-gray-500 mt-0.5">{order.date}</div>
-                          </div>
-                          <div className="ml-3 shrink-0">
-                            <span className={statusBadge(order.status)}>{order.status}</span>
-                          </div>
+                    {/* Mobile Layout */}
+                    <div className="lg:hidden">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold text-gray-900 truncate mb-1">{order.name}</div>
+                          <div className="text-xs text-gray-500">{order.date}</div>
                         </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                          <div>
-                            <span className="text-gray-500">Product: </span>
-                            <span className="text-gray-700 font-medium">{order.product}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">Price: </span>
-                            <span className="text-gray-700 font-semibold">{order.price}</span>
-                          </div>
-                        </div>
+                        <span className={statusBadge(order.status)}>{order.status}</span>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                        <span className="text-xs text-gray-500">Amount</span>
+                        <span className="text-sm font-semibold text-gray-900">{order.price}</span>
                       </div>
                     </div>
-                  </div>
+
+                    {/* Desktop Layout */}
+                    <div className="hidden lg:grid lg:grid-cols-12 lg:gap-3 lg:items-center">
+                      <div className="col-span-4">
+                        <div className="text-sm font-semibold text-gray-900 mb-0.5">{order.name}</div>
+                        <div className="text-xs text-gray-500 flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          {order.date}
+                        </div>
+                      </div>
+                      <div className="col-span-5 text-center">
+                        <div className="text-sm font-semibold text-gray-900">{order.price}</div>
+                      </div>
+                      <div className="col-span-3">
+                          <span className={statusBadge(order.status)}>{order.status}</span>
+                      </div>
+                    </div>
+                  </a>
                 ))}
               </div>
             )}
           </section>
+
         </main>
       </div>
 

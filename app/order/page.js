@@ -10,6 +10,7 @@ import {
   Bars3Icon,
   PencilIcon,
   TrashIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline'
 import { StarIcon } from '@heroicons/react/20/solid'
 
@@ -45,6 +46,7 @@ const navigation = [
   },
   { name: 'Customers', href: '/customers', icon: UsersIcon },
   { name: 'Orders', href: '/orders', icon: FolderIcon },
+  { name: 'Inquiries', href: '/inquiries', icon: ChatBubbleLeftRightIcon },
   { name: 'Review', href: '/Review', icon: StarIcon },
   { name: 'Logout', href: '/logout', icon: XMarkIcon },
 ]
@@ -75,14 +77,19 @@ export default function OrdersPage() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const [orders, setOrders] = useState([])
+  const [productMap, setProductMap] = useState({}) // Map of product id -> product name
   const [editingOrder, setEditingOrder] = useState(null)
   const [formData, setFormData] = useState({
     date: '',
     name: '',
     customerEmail: '',
+    phone: '',
     product: '',
     quantity: '1',
     price: '',
+    shippingMethod: 'pickup', // 'pickup' or 'shipping'
+    address: '',
+    shippingCost: '',
     status: 'In Process',
   })
   const [showForm, setShowForm] = useState(false)
@@ -90,26 +97,160 @@ export default function OrdersPage() {
   const [deleteId, setDeleteId] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Helper function to format address from shippingDetails
+  const formatAddress = (order) => {
+    const shippingDetails = order.shippingDetails || {}
+    const addressParts = []
+    
+    if (shippingDetails.address) addressParts.push(shippingDetails.address)
+    if (shippingDetails.addressLine2) addressParts.push(shippingDetails.addressLine2)
+    if (shippingDetails.city) addressParts.push(shippingDetails.city)
+    if (shippingDetails.state) addressParts.push(shippingDetails.state)
+    if (shippingDetails.postcode) addressParts.push(shippingDetails.postcode)
+    
+    // Fallback to top-level address if shippingDetails is empty
+    if (addressParts.length === 0 && order.address) {
+      return order.address
+    }
+    
+    return addressParts.length > 0 ? addressParts.join(', ') : '—'
+  }
+
+  // Helper function to get product name from order
+  // Matches order's product ID with products in ArtificialGrass and LiveGrass collections
+  const getProductName = (order) => {
+    // Priority 1: Check order.productId (from d.id field in Orders collection)
+    // This is the product ID field in the order document (like "AG15")
+    if (order.productId && productMap[order.productId]) {
+      return productMap[order.productId]
+    }
+    
+    // Priority 2: Check if products array exists and has items with id field
+    if (Array.isArray(order.products) && order.products.length > 0) {
+      const firstProduct = order.products[0]
+      // If product is an object with id field
+      if (firstProduct && typeof firstProduct === 'object' && firstProduct.id && productMap[firstProduct.id]) {
+        return productMap[firstProduct.id]
+      }
+      // If product is a string ID
+      if (typeof firstProduct === 'string' && productMap[firstProduct]) {
+        return productMap[firstProduct]
+      }
+    }
+    
+    // Priority 3: Check if product field contains an ID that matches
+    if (order.product && typeof order.product === 'string' && productMap[order.product]) {
+      return productMap[order.product]
+    }
+    
+    // Priority 4: Check if order document has id field directly (shouldn't happen but just in case)
+    // Note: order.id is the Firestore document ID, not the product ID, so this is unlikely to match
+    // But we check it anyway as a fallback
+    
+    // Fallback: Return original product field or display as-is
+    if (order.product) {
+      return order.product
+    }
+    if (Array.isArray(order.products) && order.products.length > 0) {
+      const firstProduct = order.products[0]
+      if (typeof firstProduct === 'object' && firstProduct.name) {
+        return firstProduct.name
+      }
+      return String(firstProduct)
+    }
+    return '—'
+  }
+
+  // Fetch products from ArtificialGrass and LiveGrass collections
   useEffect(() => {
-    const coll = collection(db, 'orders')
+    const unsubs = []
+    
+    // Fetch from ArtificialGrass
+    const unsubAG = onSnapshot(collection(db, 'ArtificialGrass'), (snapshot) => {
+      const productIdMap = {}
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data()
+        // Use the id field from the document data (like "AG15"), or fallback to document ID
+        const productId = data.id || doc.id
+        // Always use the name field, not category
+        const productName = data.name || ''
+        if (productId && productName) {
+          productIdMap[productId] = productName
+        }
+      })
+      setProductMap((prev) => ({ ...prev, ...productIdMap }))
+    })
+    unsubs.push(unsubAG)
+    
+    // Fetch from LiveGrass
+    const unsubLG = onSnapshot(collection(db, 'LiveGrass'), (snapshot) => {
+      const productIdMap = {}
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data()
+        // Use the id field from the document data (like "LG10"), or fallback to document ID
+        const productId = data.id || doc.id
+        // Always use the name field, not category
+        const productName = data.name || ''
+        if (productId && productName) {
+          productIdMap[productId] = productName
+        }
+      })
+      setProductMap((prev) => ({ ...prev, ...productIdMap }))
+    })
+    unsubs.push(unsubLG)
+    
+    return () => {
+      unsubs.forEach((unsub) => unsub && unsub())
+    }
+  }, [])
+
+  useEffect(() => {
+    // Use 'Orders' collection (uppercase) as shown in Firebase console
+    const coll = collection(db, 'Orders')
     const q = query(coll, orderBy('date', 'desc'))
+    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc) => {
         const d = doc.data()
-        const dateObj = d.date?.toDate instanceof Function ? d.date.toDate() : null
+        // Try date first, then timestamp
+        const dateObj = d.date?.toDate instanceof Function ? d.date.toDate() : 
+                       d.timestamp?.toDate instanceof Function ? d.timestamp.toDate() : null
+        
+        // Format address from shippingDetails
+        const fullAddress = formatAddress(d)
+        
+        // Get shippingDetails - everything is under shippingDetails according to Firebase structure
+        const shippingDetails = d.shippingDetails || {}
+        // requestShipping is inside shippingDetails, not at top level
+        const requestShipping = shippingDetails.requestShipping === true || 
+                               shippingDetails.requestShipping === 'true' || 
+                               d.requestShipping === true || 
+                               d.requestShipping === 'true' || 
+                               false
+        
         return {
-          id: doc.id,
+          id: doc.id, // Firestore document ID
           date: dateObj ? dateObj.toLocaleDateString() : d.date || '',
           name: d.name || '',
-          customerEmail: d.customerEmail || '',
-          product: d.product || '',
+          customerEmail: d.customerEmail || d.email || '',
+          phone: d.phone || '',
+          product: d.product || d.products || '',
+          productId: d.id || null, // Product ID from Orders collection (like "AG15") - matches id in ArtificialGrass/LiveGrass
+          products: d.products || null, // Products array if exists
           quantity: d.quantity ? String(d.quantity) : '1',
           price: d.price || '',
           status: d.status || 'In Process',
+          requestShipping: requestShipping,
+          shippingDetails: shippingDetails,
+          address: fullAddress,
+          shippingCost: shippingDetails.shippingCost || d.shippingCost || 0,
         }
       })
       setOrders(data)
+    }, (error) => {
+      console.error('Error fetching orders:', error)
     })
+    
     return () => unsubscribe()
   }, [])
 
@@ -125,9 +266,13 @@ export default function OrdersPage() {
       date: '',
       name: '',
       customerEmail: '',
+      phone: '',
       product: '',
       quantity: '1',
       price: '',
+      shippingMethod: 'pickup',
+      address: '',
+      shippingCost: '',
       status: 'In Process',
     })
     setShowForm(true)
@@ -143,15 +288,26 @@ export default function OrdersPage() {
           dateValue = parsedDate.toISOString().slice(0, 10)
         }
       } catch {}
+      // Get shipping details - requestShipping is inside shippingDetails
+      const shippingDetails = order.shippingDetails || {}
+      const requestShipping = shippingDetails.requestShipping === true || 
+                             shippingDetails.requestShipping === 'true' || 
+                             order.requestShipping === true || 
+                             order.requestShipping === 'true' || 
+                             false
 
       setFormData({
         date: dateValue,
-        name: order.name,
-        customerEmail: order.customerEmail,
-        product: order.product,
-        quantity: order.quantity,
-        price: order.price,
-        status: order.status,
+        name: order.name || '',
+        customerEmail: order.customerEmail || '',
+        phone: order.phone || '',
+        product: order.product || '',
+        quantity: order.quantity || '1',
+        price: order.price || '',
+        shippingMethod: requestShipping ? 'shipping' : 'pickup',
+        address: shippingDetails.address || order.address || '',
+        shippingCost: shippingDetails.shippingCost || order.shippingCost || '',
+        status: order.status || 'In Process',
       })
       setEditingOrder(id)
       setShowForm(true)
@@ -171,20 +327,44 @@ export default function OrdersPage() {
         const dateObj = new Date(formData.date)
         if (!isNaN(dateObj)) dateForFirestore = Timestamp.fromDate(dateObj)
       }
+      
+      const isShipping = formData.shippingMethod === 'shipping'
       const orderData = {
         date: dateForFirestore,
         name: formData.name,
         customerEmail: formData.customerEmail,
+        phone: formData.phone || '',
         product: formData.product,
         quantity: Number(formData.quantity) || 1,
         price: formData.price,
         status: formData.status,
       }
+      // Add shippingDetails object - everything goes inside shippingDetails
+      if (isShipping) {
+        orderData.shippingDetails = {
+          requestShipping: true,
+          address: formData.address || '',
+          shippingCost: formData.shippingCost ? Number(formData.shippingCost) : 0,
+        }
+        // Also add top-level address for backwards compatibility
+        if (formData.address) {
+          orderData.address = formData.address
+        }
+        if (formData.shippingCost) {
+          orderData.shippingCost = Number(formData.shippingCost)
+        }
+      } else {
+        // For pickup, set requestShipping to false in shippingDetails
+        orderData.shippingDetails = {
+          requestShipping: false,
+        }
+      }
+      
       if (editingOrder) {
-        const orderRef = doc(db, 'orders', editingOrder)
+        const orderRef = doc(db, 'Orders', editingOrder)
         await updateDoc(orderRef, orderData)
       } else {
-        const ordersCollection = collection(db, 'orders')
+        const ordersCollection = collection(db, 'Orders')
         await addDoc(ordersCollection, orderData)
       }
 
@@ -194,9 +374,13 @@ export default function OrdersPage() {
         date: '',
         name: '',
         customerEmail: '',
+        phone: '',
         product: '',
         quantity: '1',
         price: '',
+        shippingMethod: 'pickup',
+        address: '',
+        shippingCost: '',
         status: 'In Process',
       })
     } catch (error) {
@@ -211,9 +395,13 @@ export default function OrdersPage() {
       date: '',
       name: '',
       customerEmail: '',
+      phone: '',
       product: '',
       quantity: '1',
       price: '',
+      shippingMethod: 'pickup',
+      address: '',
+      shippingCost: '',
       status: 'In Process',
     })
   }
@@ -226,7 +414,7 @@ export default function OrdersPage() {
   const confirmDelete = async () => {
     if (deleteId) {
       try {
-        await deleteDoc(doc(db, 'orders', deleteId))
+        await deleteDoc(doc(db, 'Orders', deleteId))
         setShowDeleteModal(false)
         setDeleteId(null)
       } catch (error) {
@@ -276,8 +464,8 @@ export default function OrdersPage() {
     
     if (orders.length === 0) return
     
-    // Get headers from the first order
-    const headers = Object.keys(orders[0])
+    // Define headers
+    const headers = ['ID', 'Date', 'Name', 'Phone', 'Email', 'Product', 'Quantity', 'Price', 'Shipping/Pickup', 'Address', 'Shipping Price', 'Status']
     worksheet.addRow(headers)
     
     // Style header row
@@ -290,14 +478,25 @@ export default function OrdersPage() {
     
     // Add data rows
     orders.forEach(order => {
-      const row = headers.map(header => {
-        const value = order[header]
-        // Handle nested objects/arrays
-        if (value && typeof value === 'object') {
-          return JSON.stringify(value)
-        }
-        return value ?? ''
-      })
+      const requestShipping = order.requestShipping === true || order.requestShipping === 'true'
+      const shippingMethod = requestShipping ? 'Shipping' : 'Pickup'
+      const address = requestShipping ? (order.address || '—') : '—'
+      const shippingCost = order.shippingCost || 0
+      
+      const row = [
+        order.id?.substring(0, 8) || '—',
+        order.date || '—',
+        order.name || '—',
+        order.phone || '—',
+        order.customerEmail || 'N/A',
+        getProductName(order),
+        order.quantity || '—',
+        order.price || 0,
+        shippingMethod,
+        address,
+        requestShipping && shippingCost > 0 ? Number(shippingCost).toFixed(2) : '—',
+        order.status || '—',
+      ]
       worksheet.addRow(row)
     })
     
@@ -313,24 +512,55 @@ export default function OrdersPage() {
   }
 
   const exportToCSV = () => {
-    const csv = Papa.unparse(orders)
+    const csvData = orders.map(order => {
+      const requestShipping = order.requestShipping === true || order.requestShipping === 'true'
+      const shippingMethod = requestShipping ? 'Shipping' : 'Pickup'
+      const address = requestShipping ? (order.address || '—') : '—'
+      const shippingCost = order.shippingCost || 0
+      
+      return {
+        ID: order.id?.substring(0, 8) || '—',
+        Date: order.date || '—',
+        Name: order.name || '—',
+        Phone: order.phone || '—',
+        Email: order.customerEmail || 'N/A',
+        Product: getProductName(order),
+        Quantity: order.quantity || '—',
+        Price: order.price || 0,
+        'Shipping/Pickup': shippingMethod,
+        Address: address,
+        'Shipping Price': requestShipping && shippingCost > 0 ? Number(shippingCost).toFixed(2) : '—',
+        Status: order.status || '—',
+      }
+    })
+    const csv = Papa.unparse(csvData)
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     saveAs(blob, 'orders.csv')
   }
 
   const exportToPDF = () => {
     const doc = new jsPDF()
-    const tableColumn = ['Date', 'Name', 'Email', 'Product', 'Quantity', 'Price', 'Status']
+    const tableColumn = ['ID', 'Date', 'Name', 'Phone', 'Email', 'Product', 'Quantity', 'Price', 'Shipping/Pickup', 'Address', 'Shipping Price', 'Status']
     const tableRows = []
 
     orders.forEach((order) => {
+      const requestShipping = order.requestShipping === true || order.requestShipping === 'true'
+      const shippingMethod = requestShipping ? 'Shipping' : 'Pickup'
+      const address = requestShipping ? (order.address || '—') : '—'
+      const shippingCost = order.shippingCost || 0
+      
       const orderData = [
+        order.id?.substring(0, 8) || '—',
         order.date,
         order.name,
+        order.phone || '—',
         order.customerEmail || 'N/A',
-        order.product,
+        getProductName(order),
         order.quantity,
         `RM${order.price}`,
+        shippingMethod,
+        address,
+        requestShipping && shippingCost > 0 ? `RM ${Number(shippingCost).toFixed(2)}` : '—',
         order.status,
       ]
       tableRows.push(orderData)
@@ -592,53 +822,87 @@ export default function OrdersPage() {
               <table className="min-w-full text-left text-sm text-gray-700 border-collapse">
                 <thead>
                   <tr>
-                    <th className="px-4 py-2 font-semibold border-b border-gray-200">Date</th>
-                    <th className="px-4 py-2 font-semibold border-b border-gray-200">Name</th>
-                    <th className="px-4 py-2 font-semibold border-b border-gray-200">Email</th>
-                    <th className="px-4 py-2 font-semibold border-b border-gray-200">Product</th>
-                    <th className="px-4 py-2 font-semibold border-b border-gray-200">Quantity</th>
-                    <th className="px-4 py-2 font-semibold border-b border-gray-200">Price</th>
-                    <th className="px-4 py-2 font-semibold border-b border-gray-200">Status</th>
-                    <th className="px-4 py-2 font-semibold border-b border-gray-200">Action</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">ID</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">Date</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">Name</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">Phone</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">Email</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">Product</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">Quantity</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">Price</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">Shipping/Pickup</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">Address</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">Shipping Price</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">Status</th>
+                    <th className="px-3 sm:px-4 py-2 font-semibold border-b border-gray-200 text-xs sm:text-sm">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={13} className="px-4 py-8 text-center text-gray-500">
                         No orders found.
                       </td>
                     </tr>
                   ) : (
-                    filteredOrders.map((order, idx) => (
-                      <tr key={order.id} className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                        <td className="px-4 py-2 border-b">{order.date}</td>
-                        <td className="px-4 py-2 border-b">{order.name}</td>
-                        <td className="px-4 py-2 border-b">{order.customerEmail || 'N/A'}</td>
-                        <td className="px-4 py-2 border-b">{order.product}</td>
-                        <td className="px-4 py-2 border-b">{order.quantity}</td>
-                        <td className="px-4 py-2 border-b">RM{order.price}</td>
-                        <td className="px-4 py-2 border-b">
-                          <span className={statusBadge(order.status)}>{order.status}</span>
-                        </td>
-                        <td className="px-4 py-2 border-b flex gap-2">
-                          <button
-                            onClick={() => handleEdit(order.id)}
-                            className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded-md"
-                            aria-label={`Edit ${order.name}`}
-                          >
-                            <PencilIcon className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(order.id)}
-                            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-md"
-                            aria-label={`Delete ${order.name}`}
-                          >
-                            <TrashIcon className="h-5 w-5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    filteredOrders.map((order, idx) => {
+                      // requestShipping should already be set correctly from the data mapping above
+                      const requestShipping = order.requestShipping === true || order.requestShipping === 'true'
+                      const shippingMethod = requestShipping ? 'Shipping' : 'Pickup'
+                      const address = requestShipping ? (order.address || '—') : '—'
+                      const shippingCost = order.shippingCost || 0
+                      
+                      return (
+                        <tr key={order.id} className={idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                          <td className="px-3 sm:px-4 py-2 border-b text-xs sm:text-sm">{order.id?.substring(0, 8) || '—'}</td>
+                          <td className="px-3 sm:px-4 py-2 border-b text-xs sm:text-sm">{order.date}</td>
+                          <td className="px-3 sm:px-4 py-2 border-b text-xs sm:text-sm">{order.name}</td>
+                          <td className="px-3 sm:px-4 py-2 border-b text-xs sm:text-sm">{order.phone || '—'}</td>
+                          <td className="px-3 sm:px-4 py-2 border-b text-xs sm:text-sm">{order.customerEmail || 'N/A'}</td>
+                          <td className="px-3 sm:px-4 py-2 border-b text-xs sm:text-sm">{getProductName(order)}</td>
+                          <td className="px-3 sm:px-4 py-2 border-b text-xs sm:text-sm">{order.quantity}</td>
+                          <td className="px-3 sm:px-4 py-2 border-b text-xs sm:text-sm">RM{order.price}</td>
+                          <td className="px-3 sm:px-4 py-2 border-b">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              requestShipping 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-purple-100 text-purple-800'
+                            }`}>
+                              {shippingMethod}
+                            </span>
+                          </td>
+                          <td className="px-3 sm:px-4 py-2 border-b text-xs sm:text-sm max-w-xs">
+                            <div className="truncate" title={address}>
+                              {address}
+                            </div>
+                          </td>
+                          <td className="px-3 sm:px-4 py-2 border-b text-xs sm:text-sm font-medium">
+                            {requestShipping && shippingCost > 0 ? `RM ${Number(shippingCost).toFixed(2)}` : '—'}
+                          </td>
+                          <td className="px-3 sm:px-4 py-2 border-b">
+                            <span className={statusBadge(order.status)}>{order.status}</span>
+                          </td>
+                          <td className="px-3 sm:px-4 py-2 border-b">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEdit(order.id)}
+                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded-md"
+                                aria-label={`Edit ${order.name}`}
+                              >
+                                <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(order.id)}
+                                className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-md"
+                                aria-label={`Delete ${order.name}`}
+                              >
+                                <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
                   )}
                 </tbody>
               </table>
@@ -688,6 +952,13 @@ export default function OrdersPage() {
               />
               <input
                 className="w-full border rounded px-3 py-2 text-black"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Phone"
+              />
+              <input
+                className="w-full border rounded px-3 py-2 text-black"
                 name="product"
                 value={formData.product}
                 onChange={handleChange}
@@ -715,6 +986,58 @@ export default function OrdersPage() {
                 placeholder="Price"
                 required
               />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Shipping Method <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="shippingMethod"
+                      value="pickup"
+                      checked={formData.shippingMethod === 'pickup'}
+                      onChange={handleChange}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">Pickup</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="shippingMethod"
+                      value="shipping"
+                      checked={formData.shippingMethod === 'shipping'}
+                      onChange={handleChange}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">Shipping</span>
+                  </label>
+                </div>
+              </div>
+              {formData.shippingMethod === 'shipping' && (
+                <>
+                  <textarea
+                    className="w-full border rounded px-3 py-2 text-black"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Address"
+                    required={formData.shippingMethod === 'shipping'}
+                    rows={3}
+                  />
+                  <input
+                    className="w-full border rounded px-3 py-2 text-black"
+                    name="shippingCost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.shippingCost}
+                    onChange={handleChange}
+                    placeholder="Shipping Cost (RM)"
+                  />
+                </>
+              )}
               <select
                 name="status"
                 value={formData.status}
