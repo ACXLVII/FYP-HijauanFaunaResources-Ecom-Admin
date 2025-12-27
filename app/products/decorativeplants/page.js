@@ -36,8 +36,6 @@ const navigation = [
       { name: 'Decorative Plants', href: '/products/decorativeplants' },
       { name: 'Boulders Rocks', href: '/products/bouldersplants' },
       { name: 'Pebbles Rocks', href: '/products/pebblesrocks' },
-      { name: 'Furniture', href: '/products/furniture' },
-      { name: 'Ornaments', href: '/products/ornaments' },
     ],
   },
   { name: 'Customers', href: '/customers', icon: UsersIcon },

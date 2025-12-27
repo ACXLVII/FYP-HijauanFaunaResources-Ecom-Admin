@@ -36,8 +36,6 @@ const navigation = [
       { name: 'Decorative Plants', href: '/products/decorativeplants' },
       { name: 'Boulders Rocks', href: '/products/bouldersplants' },
       { name: 'Pebbles Rocks', href: '/products/pebblesrocks' },
-      { name: 'Furniture', href: '/products/furniture' },
-      { name: 'Ornaments', href: '/products/ornaments' },
     ],
   },
   { name: 'Customers', href: '/customers', icon: UsersIcon },
@@ -217,7 +215,7 @@ export default function ProductsPage() {
   })
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'RocksBoulders'), (snap) => {
+    const unsub = onSnapshot(collection(db, 'Boulders'), (snap) => {
       const list = snap.docs.map((d) => {
         const data = d.data()
         // Preserve Firestore document ID as docId, and keep custom id field if it exists
@@ -271,10 +269,10 @@ export default function ProductsPage() {
           alert('Error: Cannot find document ID for this product')
           return
         }
-        const ref = doc(db, 'RocksBoulders', docId)
+        const ref = doc(db, 'Boulders', docId)
         await updateDoc(ref, prodData)
       } else {
-        await addDoc(collection(db, 'RocksBoulders'), prodData)
+        await addDoc(collection(db, 'Boulders'), prodData)
       }
       resetModal()
     } catch (error) {
@@ -307,7 +305,7 @@ export default function ProductsPage() {
   const deleteProduct = async () => {
     if (!productToDel) return
     try {
-      await deleteDoc(doc(db, 'RocksBoulders', productToDel))
+      await deleteDoc(doc(db, 'Boulders', productToDel))
       setShowDelete(false)
       setProductToDel(null)
     } catch (error) {

@@ -38,8 +38,6 @@ const navigation = [
       { name: 'Decorative Plants', href: '/products/decorativeplants' },
       { name: 'Boulders Rocks', href: '/products/bouldersplants' },
       { name: 'Pebbles Rocks', href: '/products/pebblesrocks' },
-      { name: 'Furniture', href: '/products/furniture' },
-      { name: 'Ornaments', href: '/products/ornaments' },
     ],
   },
   { name: 'Customers', href: '/customers', icon: UsersIcon },
@@ -257,8 +255,8 @@ export default function OrdersPage() {
     })
     unsubs.push(unsub4)
     
-    // Fetch from RocksBoulders collection
-    const unsub5 = onSnapshot(collection(db, 'RocksBoulders'), (snap) => {
+    // Fetch from Boulders collection
+    const unsub5 = onSnapshot(collection(db, 'Boulders'), (snap) => {
       const productsList = []
       snap.docs.forEach((docSnap) => {
         const data = docSnap.data()
@@ -277,8 +275,8 @@ export default function OrdersPage() {
     })
     unsubs.push(unsub5)
     
-    // Fetch from RocksPebbles collection
-    const unsub6 = onSnapshot(collection(db, 'RocksPebbles'), (snap) => {
+    // Fetch from Pebbles collection
+    const unsub6 = onSnapshot(collection(db, 'Pebbles'), (snap) => {
       const productsList = []
       snap.docs.forEach((docSnap) => {
         const data = docSnap.data()
@@ -296,46 +294,6 @@ export default function OrdersPage() {
       })
     })
     unsubs.push(unsub6)
-    
-    // Fetch from OthersFurniture collection
-    const unsub7 = onSnapshot(collection(db, 'OthersFurniture'), (snap) => {
-      const productsList = []
-      snap.docs.forEach((docSnap) => {
-        const data = docSnap.data()
-        const productId = data.id || docSnap.id
-        const productName = data.name || ''
-        if (productId) {
-          products[productId] = productName
-          productsList.push({ id: productId, name: productName, category: 'Furniture' })
-        }
-      })
-      setProductsMap((prev) => ({ ...prev, ...products }))
-      setAllProducts((prev) => {
-        const filtered = prev.filter(p => p.category !== 'Furniture')
-        return [...filtered, ...productsList]
-      })
-    })
-    unsubs.push(unsub7)
-    
-    // Fetch from OthersOrnaments collection
-    const unsub8 = onSnapshot(collection(db, 'OthersOrnaments'), (snap) => {
-      const productsList = []
-      snap.docs.forEach((docSnap) => {
-        const data = docSnap.data()
-        const productId = data.id || docSnap.id
-        const productName = data.name || ''
-        if (productId) {
-          products[productId] = productName
-          productsList.push({ id: productId, name: productName, category: 'Ornaments' })
-        }
-      })
-      setProductsMap((prev) => ({ ...prev, ...products }))
-      setAllProducts((prev) => {
-        const filtered = prev.filter(p => p.category !== 'Ornaments')
-        return [...filtered, ...productsList]
-      })
-    })
-    unsubs.push(unsub8)
     
     return () => {
       unsubs.forEach((unsub) => unsub && unsub())

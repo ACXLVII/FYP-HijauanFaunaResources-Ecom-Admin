@@ -31,8 +31,6 @@ const navigation = [
       { name: 'Decorative Plants', href: '/products/decorativeplants' },
       { name: 'Boulders Rocks', href: '/products/bouldersplants' },
       { name: 'Pebbles Rocks', href: '/products/pebblesrocks' },
-      { name: 'Furniture', href: '/products/furniture' },
-      { name: 'Ornaments', href: '/products/ornaments' },
     ],
   },
   { name: 'Customers', href: '/customers', icon: UsersIcon },
@@ -162,8 +160,8 @@ export default function DashboardPage() {
     })
     unsubs.push(unsub4)
     
-    // Fetch from RocksBoulders collection
-    const unsub5 = onSnapshot(collection(db, 'RocksBoulders'), (snap) => {
+    // Fetch from Boulders collection
+    const unsub5 = onSnapshot(collection(db, 'Boulders'), (snap) => {
       snap.docs.forEach((docSnap) => {
         const data = docSnap.data()
         const productId = data.id || docSnap.id
@@ -175,8 +173,8 @@ export default function DashboardPage() {
     })
     unsubs.push(unsub5)
     
-    // Fetch from RocksPebbles collection
-    const unsub6 = onSnapshot(collection(db, 'RocksPebbles'), (snap) => {
+    // Fetch from Pebbles collection
+    const unsub6 = onSnapshot(collection(db, 'Pebbles'), (snap) => {
       snap.docs.forEach((docSnap) => {
         const data = docSnap.data()
         const productId = data.id || docSnap.id
@@ -187,32 +185,6 @@ export default function DashboardPage() {
       setProductsMap((prev) => ({ ...prev, ...productCategoryMap }))
     })
     unsubs.push(unsub6)
-    
-    // Fetch from OthersFurniture collection
-    const unsub7 = onSnapshot(collection(db, 'OthersFurniture'), (snap) => {
-      snap.docs.forEach((docSnap) => {
-        const data = docSnap.data()
-        const productId = data.id || docSnap.id
-        if (productId) {
-          productCategoryMap[productId] = 'Furniture'
-        }
-      })
-      setProductsMap((prev) => ({ ...prev, ...productCategoryMap }))
-    })
-    unsubs.push(unsub7)
-    
-    // Fetch from OthersOrnaments collection
-    const unsub8 = onSnapshot(collection(db, 'OthersOrnaments'), (snap) => {
-      snap.docs.forEach((docSnap) => {
-        const data = docSnap.data()
-        const productId = data.id || docSnap.id
-        if (productId) {
-          productCategoryMap[productId] = 'Ornaments'
-        }
-      })
-      setProductsMap((prev) => ({ ...prev, ...productCategoryMap }))
-    })
-    unsubs.push(unsub8)
     
     return () => {
       unsubs.forEach((unsub) => unsub && unsub())
@@ -329,9 +301,32 @@ export default function DashboardPage() {
       'Decorative Plants': '#ef4444', // red
       'Boulders Rocks': '#22c55e', // green
       'Pebbles Rocks': '#8b5cf6', // purple
-      'Furniture': '#ec4899', // pink
-      'Ornaments': '#06b6d4', // cyan
       'Other': '#6b7280', // gray
+    }
+
+    // Normalize category name to match predefined categories
+    const normalizeCategory = (categoryName) => {
+      if (!categoryName) return 'Other'
+      const normalized = String(categoryName).trim()
+      
+      // Direct match
+      if (categoryColors[normalized]) return normalized
+      
+      // Case-insensitive match
+      const lower = normalized.toLowerCase()
+      for (const key in categoryColors) {
+        if (key.toLowerCase() === lower) return key
+      }
+      
+      // Partial match for common variations
+      if (lower.includes('live') && lower.includes('grass')) return 'Live Grass'
+      if (lower.includes('artificial') && lower.includes('grass')) return 'Artificial Grass'
+      if (lower.includes('product') && lower.includes('plant')) return 'Product Plants'
+      if (lower.includes('decorative') && lower.includes('plant')) return 'Decorative Plants'
+      if (lower.includes('boulder')) return 'Boulders Rocks'
+      if (lower.includes('pebble')) return 'Pebbles Rocks'
+      
+      return 'Other'
     }
 
     // Initialize all categories with 0 sales
@@ -351,45 +346,54 @@ export default function DashboardPage() {
           let price = 0
           
           if (typeof product === 'object' && product !== null) {
-            // First try to get category directly from product object
+            // Priority 1: Get category directly from product object (most accurate)
             if (product.category) {
-              category = product.category
+              category = normalizeCategory(product.category)
             } else {
-              // Fallback: try to get category from product ID lookup
+              // Priority 2: Get category from product ID lookup in productsMap
               const productId = product.id || ''
               if (productId && productsMap[productId]) {
-                category = productsMap[productId]
+                category = normalizeCategory(productsMap[productId])
               }
             }
             
-            // Get price from product
-            price = product.price || product.amount || 0
-            const quantity = product.quantity || product.qty || 1
-            price = Number(price) * Number(quantity)
+            // Calculate price: use product price * quantity
+            const productPrice = Number(product.price || product.amount || 0)
+            const quantity = Number(product.quantity || product.qty || 1)
+            price = productPrice * quantity
             
-            // If price is still 0, calculate from order total divided by items
+            // If price is still 0 or invalid, try to calculate from order total
             if (price === 0 || isNaN(price)) {
-              const orderPrice = calculateTotalPrice(order.products || order.product, order.price)
-              price = orderPrice / Math.max(productsArray.length, 1)
+              const orderTotal = Number(order.price || 0)
+              if (orderTotal > 0) {
+                // Distribute order total evenly across all products
+                price = orderTotal / Math.max(productsArray.length, 1)
+              }
             }
           } else {
             // Product is not an object, use order price divided by items
-            const orderPrice = calculateTotalPrice(order.products || order.product, order.price)
-            price = orderPrice / Math.max(productsArray.length, 1)
+            const orderTotal = Number(order.price || 0)
+            price = orderTotal / Math.max(productsArray.length, 1)
           }
           
-          if (!categorySales[category]) {
-            categorySales[category] = 0
+          // Ensure price is valid
+          if (isNaN(price) || price < 0) {
+            price = 0
           }
-          categorySales[category] += price
+          
+          // Add to category sales
+          const normalizedCategory = normalizeCategory(category)
+          if (!categorySales[normalizedCategory]) {
+            categorySales[normalizedCategory] = 0
+          }
+          categorySales[normalizedCategory] += price
         })
       } else {
         // No products found, categorize as "Other"
-        const orderPrice = calculateTotalPrice(order.products || order.product, order.price)
-        if (!categorySales['Other']) {
-          categorySales['Other'] = 0
+        const orderTotal = Number(order.price || 0)
+        if (!isNaN(orderTotal) && orderTotal > 0) {
+          categorySales['Other'] = (categorySales['Other'] || 0) + orderTotal
         }
-        categorySales['Other'] += orderPrice
       }
     })
 
