@@ -73,16 +73,54 @@ function extractProductName(products) {
 }
 
 function calculateTotalPrice(products, orderPrice) {
-  if (Array.isArray(products)) {
-    return products.reduce((sum, item) => {
-      const price = typeof item === 'object' ? (item.price || 0) : 0
-      return sum + Number(price)
-    }, 0) || orderPrice || 0
+  // Priority 1: Use order price if available (most accurate)
+  if (orderPrice !== undefined && orderPrice !== null) {
+    const numPrice = Number(orderPrice)
+    if (!isNaN(numPrice) && numPrice > 0) {
+      return numPrice
+    }
   }
-  if (typeof products === 'object' && products.price) {
-    return Number(products.price) || orderPrice || 0
+
+  // Priority 2: Calculate from products array
+  if (Array.isArray(products) && products.length > 0) {
+    const total = products.reduce((sum, item) => {
+      if (typeof item === 'object' && item !== null) {
+        // If item has a price field, use it (might already be quantity * pricePerUnit)
+        if (item.price !== undefined && item.price !== null) {
+          return sum + Number(item.price || 0)
+        }
+        // Otherwise, calculate price * quantity
+        const itemPrice = Number(item.pricePerUnit || item.price || item.amount || 0)
+        const quantity = Number(item.quantity || item.qty || 1)
+        return sum + (itemPrice * quantity)
+      }
+      return sum
+    }, 0)
+    
+    if (total > 0) {
+      return total
+    }
   }
-  return orderPrice || 0
+
+  // Priority 3: Single product object
+  if (typeof products === 'object' && products !== null) {
+    if (products.price !== undefined && products.price !== null) {
+      const numPrice = Number(products.price)
+      if (!isNaN(numPrice) && numPrice > 0) {
+        return numPrice
+      }
+    }
+    // Calculate from pricePerUnit * quantity
+    const itemPrice = Number(products.pricePerUnit || products.price || products.amount || 0)
+    const quantity = Number(products.quantity || products.qty || 1)
+    const calculated = itemPrice * quantity
+    if (calculated > 0) {
+      return calculated
+    }
+  }
+
+  // Fallback: return 0 if nothing found
+  return 0
 }
 
 export default function DashboardPage() {
