@@ -73,53 +73,45 @@ function extractProductName(products) {
 }
 
 function calculateTotalPrice(products, orderPrice) {
-  // Priority 1: Use order price if available (most accurate)
-  if (orderPrice !== undefined && orderPrice !== null) {
-    const numPrice = Number(orderPrice)
-    if (!isNaN(numPrice) && numPrice > 0) {
-      return numPrice
+  // Extract product details similar to orders page
+  const extractProductDetails = (value) => {
+    if (!value) return []
+    if (Array.isArray(value)) {
+      return value.map((item) => {
+        if (typeof item === 'object' && item !== null) {
+          return {
+            price: item.price ?? item.amount ?? 0,
+          }
+        }
+        return { price: 0 }
+      })
     }
+    if (typeof value === 'object') {
+      return [{
+        price: value.price ?? value.amount ?? 0,
+      }]
+    }
+    return [{ price: 0 }]
   }
 
-  // Priority 2: Calculate from products array
-  if (Array.isArray(products) && products.length > 0) {
-    const total = products.reduce((sum, item) => {
-      if (typeof item === 'object' && item !== null) {
-        // If item has a price field, use it (might already be quantity * pricePerUnit)
-        if (item.price !== undefined && item.price !== null) {
-          return sum + Number(item.price || 0)
-        }
-        // Otherwise, calculate price * quantity
-        const itemPrice = Number(item.pricePerUnit || item.price || item.amount || 0)
-        const quantity = Number(item.quantity || item.qty || 1)
-        return sum + (itemPrice * quantity)
-      }
-      return sum
-    }, 0)
-    
+  // Priority 1: Calculate from products array (same logic as orders page)
+  const productDetailsList = extractProductDetails(products)
+  if (productDetailsList.length > 0) {
+    const total = productDetailsList.reduce((sum, item) => sum + Number(item.price || 0), 0)
     if (total > 0) {
       return total
     }
   }
 
-  // Priority 3: Single product object
-  if (typeof products === 'object' && products !== null) {
-    if (products.price !== undefined && products.price !== null) {
-      const numPrice = Number(products.price)
-      if (!isNaN(numPrice) && numPrice > 0) {
-        return numPrice
-      }
-    }
-    // Calculate from pricePerUnit * quantity
-    const itemPrice = Number(products.pricePerUnit || products.price || products.amount || 0)
-    const quantity = Number(products.quantity || products.qty || 1)
-    const calculated = itemPrice * quantity
-    if (calculated > 0) {
-      return calculated
+  // Priority 2: Use order price if available
+  if (orderPrice !== undefined && orderPrice !== null) {
+    const numPrice = Number(orderPrice)
+    if (!isNaN(numPrice) && numPrice >= 0) {
+      return numPrice
     }
   }
 
-  // Fallback: return 0 if nothing found
+  // Fallback: return 0
   return 0
 }
 
@@ -299,7 +291,37 @@ export default function DashboardPage() {
       .slice(0, 5)
       .map((order) => {
         const productName = extractProductName(order.products || order.product)
-        const price = calculateTotalPrice(order.products || order.product, order.price)
+        
+        // Get price - use order.price directly (as stored in Firestore)
+        let price = 0
+        if (order.price !== undefined && order.price !== null) {
+          const numPrice = Number(order.price)
+          if (!isNaN(numPrice) && numPrice >= 0) {
+            price = numPrice
+          }
+        }
+        
+        // If price is still 0, try to calculate from products array
+        if (price === 0) {
+          const products = order.products || (order.product ? [order.product] : [])
+          const productsArray = Array.isArray(products) ? products : [products]
+          
+          if (productsArray.length > 0 && productsArray[0]) {
+            const calculatedPrice = productsArray.reduce((sum, product) => {
+              if (typeof product === 'object' && product !== null) {
+                // Product price is already quantity * pricePerUnit
+                const productPrice = Number(product.price || product.amount || 0)
+                return sum + productPrice
+              }
+              return sum
+            }, 0)
+            
+            if (calculatedPrice > 0) {
+              price = calculatedPrice
+            }
+          }
+        }
+        
         let date = '—'
         if (order.timestamp?.toDate) {
           const d = order.timestamp.toDate()
