@@ -260,7 +260,21 @@ export default function DashboardPage() {
     const totalOrders = orders.length
 
     const totalIncome = orders.reduce((sum, order) => {
-      const price = calculateTotalPrice(order.products || order.product, order.price)
+      // Check for order.total first, then order.price, then calculate from products
+      let price = 0
+      if (order.total !== undefined && order.total !== null) {
+        const numTotal = Number(order.total)
+        if (!isNaN(numTotal) && numTotal > 0) {
+          price = numTotal
+        }
+      } else if (order.price !== undefined && order.price !== null) {
+        const numPrice = Number(order.price)
+        if (!isNaN(numPrice) && numPrice > 0) {
+          price = numPrice
+        }
+      } else {
+        price = calculateTotalPrice(order.products || order.product, order.price)
+      }
       return sum + price
     }, 0)
 
@@ -292,32 +306,51 @@ export default function DashboardPage() {
       .map((order) => {
         const productName = extractProductName(order.products || order.product)
         
-        // Get price - use order.price directly (as stored in Firestore)
-        let price = 0
-        if (order.price !== undefined && order.price !== null) {
-          const numPrice = Number(order.price)
-          if (!isNaN(numPrice) && numPrice >= 0) {
-            price = numPrice
+        // Calculate price - check for order.total first (as stored in Firestore)
+        let finalPrice = 0
+        
+        // Priority 1: Use order.total (most common field name in Firestore)
+        if (order.total !== undefined && order.total !== null) {
+          const numTotal = Number(order.total)
+          if (!isNaN(numTotal) && numTotal > 0) {
+            finalPrice = numTotal
           }
         }
         
-        // If price is still 0, try to calculate from products array
-        if (price === 0) {
+        // Priority 2: Use order.price if total is not available
+        if (finalPrice === 0 && order.price !== undefined && order.price !== null) {
+          const numPrice = Number(order.price)
+          if (!isNaN(numPrice) && numPrice > 0) {
+            finalPrice = numPrice
+          }
+        }
+        
+        // Priority 3: Calculate from products array if total/price not available
+        if (finalPrice === 0) {
           const products = order.products || (order.product ? [order.product] : [])
           const productsArray = Array.isArray(products) ? products : [products]
           
           if (productsArray.length > 0 && productsArray[0]) {
-            const calculatedPrice = productsArray.reduce((sum, product) => {
+            const subtotal = productsArray.reduce((sum, product) => {
               if (typeof product === 'object' && product !== null) {
-                // Product price is already quantity * pricePerUnit
+                // Product price is already quantity * pricePerUnit (as stored in Firestore)
                 const productPrice = Number(product.price || product.amount || 0)
                 return sum + productPrice
               }
               return sum
             }, 0)
             
-            if (calculatedPrice > 0) {
-              price = calculatedPrice
+            if (subtotal > 0) {
+              // Add shipping cost if shipping is requested
+              const shippingDetails = order.shippingDetails || {}
+              const shippingCost = Number(shippingDetails.shippingCost || order.shippingCost || order.shippingPrice || 0)
+              const requestShippingValue = order.shippingDetails?.requestShipping ?? order.requestShipping
+              const isRequestShipping = requestShippingValue === true || 
+                                       requestShippingValue === 'true' || 
+                                       requestShippingValue === 'shipping' ||
+                                       requestShippingValue === 1
+              
+              finalPrice = isRequestShipping ? subtotal + shippingCost : subtotal
             }
           }
         }
@@ -337,7 +370,7 @@ export default function DashboardPage() {
           id: order.id,
           name: order.name || '—',
           product: productName,
-          price: `RM ${price.toFixed(2)}`,
+          price: `RM ${finalPrice.toFixed(2)}`,
           date: date,
           status: status,
         }
@@ -424,15 +457,16 @@ export default function DashboardPage() {
             
             // If price is still 0 or invalid, try to calculate from order total
             if (price === 0 || isNaN(price)) {
-              const orderTotal = Number(order.price || 0)
+              // Check order.total first, then order.price
+              const orderTotal = Number(order.total || order.price || 0)
               if (orderTotal > 0) {
                 // Distribute order total evenly across all products
                 price = orderTotal / Math.max(productsArray.length, 1)
               }
             }
           } else {
-            // Product is not an object, use order price divided by items
-            const orderTotal = Number(order.price || 0)
+            // Product is not an object, use order total/price divided by items
+            const orderTotal = Number(order.total || order.price || 0)
             price = orderTotal / Math.max(productsArray.length, 1)
           }
           
@@ -450,7 +484,7 @@ export default function DashboardPage() {
         })
       } else {
         // No products found, categorize as "Other"
-        const orderTotal = Number(order.price || 0)
+        const orderTotal = Number(order.total || order.price || 0)
         if (!isNaN(orderTotal) && orderTotal > 0) {
           categorySales['Other'] = (categorySales['Other'] || 0) + orderTotal
         }
